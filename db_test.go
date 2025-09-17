@@ -2,68 +2,37 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type mockRows struct {
-	idx    int
-	fields []pgconn.FieldDescription
-	values [][]interface{}
+type mockStore struct {
+	queryFunc func(ctx context.Context, sql string) (QueryResult, error)
+	closeFunc func(ctx context.Context) error
 }
 
-func (m *mockRows) Close()                                       {}
-func (m *mockRows) Err() error                                   { return nil }
-func (m *mockRows) FieldDescriptions() []pgconn.FieldDescription { return m.fields }
-func (m *mockRows) Next() bool {
-	if m.idx < len(m.values) {
-		m.idx++
-		return true
+func (m *mockStore) Query(ctx context.Context, sql string) (QueryResult, error) {
+	return m.queryFunc(ctx, sql)
+}
+func (m *mockStore) Close(ctx context.Context) error {
+	if m.closeFunc != nil {
+		return m.closeFunc(ctx)
 	}
-	return false
+	return nil
 }
-func (m *mockRows) Values() ([]interface{}, error) {
-	if m.idx == 0 || m.idx > len(m.values) {
-		return nil, errors.New("out of range")
-	}
-	return m.values[m.idx-1], nil
-}
-
-// Unused pgx.Rows methods can be stubbed:
-func (m *mockRows) RawValues() [][]byte            { return nil }
-func (m *mockRows) Conn() *pgx.Conn                { return nil }
-func (m *mockRows) CommandTag() pgconn.CommandTag  { return pgconn.CommandTag{} }
-func (m *mockRows) Scan(dest ...interface{}) error { return nil }
-
-type mockConn struct {
-	rows pgx.Rows
-}
-
-func (m *mockConn) Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
-	return m.rows, nil
-}
-func (m *mockConn) Close(ctx context.Context) error { return nil }
 
 func TestQueryFormatsResults(t *testing.T) {
+	m := &mockStore{
+		queryFunc: func(ctx context.Context, sql string) (QueryResult, error) {
+			return QueryResult{
+				{"id": int32(1), "name": "Alice"},
+				{"id": int32(2), "name": "Bob"},
+			}, nil
+		},
+	}
+
 	ctx := context.Background()
-
-	fields := []pgconn.FieldDescription{
-		{Name: "id"},
-		{Name: "name"},
-	}
-	values := [][]interface{}{
-		{1, "Alice"},
-		{2, "Bob"},
-	}
-
-	fakeRows := &mockRows{fields: fields, values: values}
-	db := &DB{conn: &mockConn{rows: fakeRows}}
-
-	got, err := db.Query(ctx, "SELECT * FROM users")
+	got, err := m.Query(ctx, "SELECT * FROM users")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
