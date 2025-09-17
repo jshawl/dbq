@@ -10,11 +10,15 @@ import (
 
 func main() {
 	ctx := context.Background()
-	db, err := NewDB(ctx, os.Getenv("DATABASE_URL"))
-
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
+	pgdb, err := NewPostgresDB(ctx, dsn)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	db := NewDB(pgdb)
 
 	defer func() {
 		if err := db.Close(ctx); err != nil {
@@ -22,11 +26,12 @@ func main() {
 		}
 	}()
 
-	results, err := db.Query(ctx, "select * from users limit 2;")
+	query, err := db.Query(ctx, "select * from users limit 2;")
 	if err != nil {
-		log.Fatalf("Failed to query: %v", err)
+		log.Fatal(err)
 	}
-	jsonData, err := json.MarshalIndent(results, "", "  ")
+	log.Printf("success in %s\n", query.Duration)
+	jsonData, err := json.MarshalIndent(query.Results, "", "  ")
 	if err != nil {
 		log.Fatalf("Failed to format results: %v", err)
 	}
