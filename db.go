@@ -7,7 +7,7 @@ import (
 )
 
 type DB struct {
-	inner PGDB
+	inner PGDBI // my interface, not the struct
 }
 
 type DBQueryResult struct {
@@ -15,7 +15,7 @@ type DBQueryResult struct {
 	Duration time.Duration
 }
 
-func NewDB(inner PGDB) *DB {
+func NewDB(inner PGDBI) *DB {
 	return &DB{inner: inner}
 }
 

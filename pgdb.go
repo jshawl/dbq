@@ -6,22 +6,27 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PGDB struct {
+type PGDBS struct {
 	conn *pgx.Conn
 }
 
-func NewPostgresDB(ctx context.Context, dsn string) (PGDB, error) {
+type PGDBI interface {
+	Query(ctx context.Context, sql string) (PostgresQueryResult, error)
+	Close(ctx context.Context) error
+}
+
+func NewPostgresDB(ctx context.Context, dsn string) (PGDBS, error) {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return PGDB{}, err
+		return PGDBS{}, err
 	}
-	db := PGDB{conn: conn}
+	db := PGDBS{conn: conn}
 	return db, nil
 }
 
 type PostgresQueryResult []map[string]interface{}
 
-func (db *PGDB) Query(ctx context.Context, sql string) (PostgresQueryResult, error) {
+func (db PGDBS) Query(ctx context.Context, sql string) (PostgresQueryResult, error) {
 	rows, err := db.conn.Query(ctx, sql)
 	if err != nil {
 		return nil, err
@@ -47,6 +52,6 @@ func (db *PGDB) Query(ctx context.Context, sql string) (PostgresQueryResult, err
 	return results, rows.Err()
 }
 
-func (db *PGDB) Close(ctx context.Context) error {
+func (db PGDBS) Close(ctx context.Context) error {
 	return db.conn.Close(ctx)
 }
