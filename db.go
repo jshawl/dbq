@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -12,22 +10,18 @@ type DB struct {
 	conn *pgx.Conn
 }
 
-var globalDB *DB
-
-func init() {
-	var err error
-	ctx := context.Background()
-	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+func NewDB(ctx context.Context, url string) (*DB, error) {
+	conn, err := pgx.Connect(ctx, url)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return nil, err
 	}
-	globalDB = &DB{conn: conn}
+	db := &DB{conn: conn}
+	return db, nil
 }
 
 type QueryResult []map[string]interface{}
 
-func (db *DB) query(sql string) (QueryResult, error) {
-	ctx := context.Background()
+func (db *DB) Query(ctx context.Context, sql string) (QueryResult, error) {
 	rows, err := db.conn.Query(ctx, sql)
 	if err != nil {
 		return nil, err
@@ -53,6 +47,6 @@ func (db *DB) query(sql string) (QueryResult, error) {
 	return results, rows.Err()
 }
 
-func (db *DB) close() {
-	db.conn.Close(context.Background())
+func (db *DB) Close(ctx context.Context) error {
+	return db.conn.Close(ctx)
 }
