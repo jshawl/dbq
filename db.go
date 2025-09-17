@@ -6,12 +6,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type DB struct {
-	conn *pgx.Conn
+type Queryable interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Close(ctx context.Context) error
 }
 
-func NewDB(ctx context.Context, url string) (*DB, error) {
-	conn, err := pgx.Connect(ctx, url)
+type DB struct {
+	conn Queryable
+}
+
+func NewDB(ctx context.Context, dsn string) (*DB, error) {
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
