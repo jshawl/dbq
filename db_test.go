@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -14,22 +15,32 @@ type mockPGDB struct {
 	closeErr    error
 }
 
-func (m *mockPGDB) Query(ctx context.Context, sql string) (PostgresQueryResult, error) {
+func (m *mockPGDB) Query(_ context.Context, _ string) (PostgresQueryResult, error) {
 	m.queryCalled = true
+
 	return m.results, m.queryErr
 }
 
-func (m *mockPGDB) Close(ctx context.Context) error {
+func (m *mockPGDB) Close(_ context.Context) error {
 	m.closeCalled = true
+
 	return m.closeErr
 }
 
 func TestQueryReturnsResultsAndDuration(t *testing.T) {
+	t.Parallel()
+
 	want := PostgresQueryResult{
 		{"id": int32(1), "name": "Alice"},
 		{"id": int32(2), "name": "Bob"},
 	}
-	mock := &mockPGDB{results: want}
+	mock := &mockPGDB{
+		closeCalled: false,
+		queryCalled: false,
+		results:     want,
+		queryErr:    nil,
+		closeErr:    nil,
+	}
 
 	db := NewDB(mock)
 
@@ -39,6 +50,7 @@ func TestQueryReturnsResultsAndDuration(t *testing.T) {
 	if !mock.queryCalled {
 		t.Error("expected Query to call inner PGDB.Query")
 	}
+
 	for i := range want {
 		for k, v := range want[i] {
 			if got.Results[i][k] != v {
@@ -46,13 +58,24 @@ func TestQueryReturnsResultsAndDuration(t *testing.T) {
 			}
 		}
 	}
+
 	if got.Duration <= 0 {
 		t.Error("expected positive Duration")
 	}
 }
 
+var ErrTestQuery = errors.New("boom")
+
 func TestQueryPropagatesError(t *testing.T) {
-	mock := &mockPGDB{queryErr: errors.New("boom")}
+	t.Parallel()
+
+	mock := &mockPGDB{
+		closeCalled: false,
+		closeErr:    nil,
+		results:     nil,
+		queryCalled: false,
+		queryErr:    fmt.Errorf("%w", ErrTestQuery),
+	}
 	db := NewDB(mock)
 
 	_, err := db.Query(context.Background(), "bad sql")
@@ -62,7 +85,15 @@ func TestQueryPropagatesError(t *testing.T) {
 }
 
 func TestCloseCallsInnerClose(t *testing.T) {
-	mock := &mockPGDB{}
+	t.Parallel()
+
+	mock := &mockPGDB{
+		closeCalled: false,
+		closeErr:    nil,
+		results:     nil,
+		queryCalled: false,
+		queryErr:    fmt.Errorf("%w", ErrTestQuery),
+	}
 	db := NewDB(mock)
 
 	err := db.Close(context.Background())
