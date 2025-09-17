@@ -2,56 +2,35 @@ package main
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5"
+	"fmt"
+	"time"
 )
 
-type Queryable interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-	Close(ctx context.Context) error
-}
-
 type DB struct {
-	conn Queryable
+	inner PGDBI // my interface, not the struct
 }
 
-func NewDB(ctx context.Context, dsn string) (*DB, error) {
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return nil, err
-	}
-	db := &DB{conn: conn}
-	return db, nil
+type DBQueryResult struct {
+	Results  PostgresQueryResult
+	Duration time.Duration
 }
 
-type QueryResult []map[string]interface{}
+func NewDB(inner PGDBI) *DB {
+	return &DB{inner: inner}
+}
 
-func (db *DB) Query(ctx context.Context, sql string) (QueryResult, error) {
-	rows, err := db.conn.Query(ctx, sql)
+func (db *DB) Query(ctx context.Context, query string) (DBQueryResult, error) {
+	start := time.Now()
+	postgresQueryResults, err := db.inner.Query(ctx, query)
 	if err != nil {
-		return nil, err
+		return DBQueryResult{}, fmt.Errorf("query %q failed: %w", query, err)
 	}
-	defer rows.Close()
-
-	var results QueryResult
-	fieldDescriptions := rows.FieldDescriptions()
-
-	for rows.Next() {
-		values, err := rows.Values()
-		if err != nil {
-			return nil, err
-		}
-
-		row := make(map[string]interface{})
-		for i, field := range fieldDescriptions {
-			row[field.Name] = values[i]
-		}
-		results = append(results, row)
-	}
-
-	return results, rows.Err()
+	return DBQueryResult{
+		Results:  postgresQueryResults,
+		Duration: time.Since(start),
+	}, nil
 }
 
 func (db *DB) Close(ctx context.Context) error {
-	return db.conn.Close(ctx)
+	return db.inner.Close(ctx)
 }
