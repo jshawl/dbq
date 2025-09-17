@@ -2,4 +2,10 @@ version: "2"
 linters:
   default: all
 formatters:
-  default: all
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
