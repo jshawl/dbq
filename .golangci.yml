@@ -3,6 +3,9 @@ linters:
   default: all
   disable:
     - depguard
+    - wsl
+  enable:
+    - wsl_v5
 formatters:
   enable:
     - gci

@@ -8,13 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PGDBS struct {
+type PGDB struct {
 	conn *pgx.Conn
-}
-
-type PGDBI interface {
-	Query(ctx context.Context, sql string) (PostgresQueryResult, error)
-	Close(ctx context.Context) error
 }
 
 var (
@@ -25,27 +20,25 @@ var (
 	ErrClose   = errors.New("failed to call Close")
 )
 
-func NewPostgresDB(ctx context.Context, dsn string) (PGDBS, error) {
+func NewPostgresDB(ctx context.Context, dsn string) (PGDB, error) {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return PGDBS{}, fmt.Errorf("%w: %w", ErrConnect, err)
+		return PGDB{}, fmt.Errorf("%w: %w", ErrConnect, err)
 	}
 
-	db := PGDBS{conn: conn}
+	db := PGDB{conn: conn}
 
 	return db, nil
 }
 
-type PostgresQueryResult []map[string]interface{}
-
-func (db PGDBS) Query(ctx context.Context, sql string) (PostgresQueryResult, error) {
+func (db PGDB) Query(ctx context.Context, sql string) (QueryResult, error) {
 	rows, err := db.conn.Query(ctx, sql)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrQuery, err)
 	}
 	defer rows.Close()
 
-	var results PostgresQueryResult
+	var results QueryResult
 
 	fieldDescriptions := rows.FieldDescriptions()
 
@@ -71,7 +64,7 @@ func (db PGDBS) Query(ctx context.Context, sql string) (PostgresQueryResult, err
 	return results, nil
 }
 
-func (db PGDBS) Close(ctx context.Context) error {
+func (db PGDB) Close(ctx context.Context) error {
 	err := db.conn.Close(ctx)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrClose, err)
