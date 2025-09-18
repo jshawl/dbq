@@ -11,9 +11,15 @@ func TestNewPostgresDB(t *testing.T) {
 
 	ctx := t.Context()
 
-	db, err := NewPostgresDB(ctx, dsn)
+	database, err := NewPostgresDB(ctx, dsn)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer db.Close(ctx)
+
+	defer func() {
+		err := database.Close(ctx)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+	}()
 }
