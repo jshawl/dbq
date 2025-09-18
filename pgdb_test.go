@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const dsn = "postgres://admin:password@localhost:5432/dbq_test"
+const DSN = "postgres://admin:password@localhost:5432/dbq_test"
 
 func setupDatabase(t *testing.T, dsn string) PGDB {
 	t.Helper()
@@ -34,7 +34,7 @@ func TestNewPostgresDB(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		database := setupDatabase(t, dsn)
+		database := setupDatabase(t, DSN)
 		_ = database
 	})
 
@@ -54,7 +54,7 @@ func TestPGDB_Query(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		database := setupDatabase(t, dsn)
+		database := setupDatabase(t, DSN)
 
 		want := []map[string]interface{}{
 			{
@@ -84,7 +84,7 @@ func TestPGDB_Query(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		t.Parallel()
 
-		database := setupDatabase(t, dsn)
+		database := setupDatabase(t, DSN)
 
 		_, err := database.Query(context.Background(), "! not sql !")
 		if err == nil {
