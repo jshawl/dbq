@@ -7,11 +7,11 @@ import (
 )
 
 type mockStore struct {
-	queryFunc func(ctx context.Context, sql string) (PostgresQueryResult, error)
+	queryFunc func(ctx context.Context, sql string) (QueryResult, error)
 	closeFunc func(ctx context.Context) error
 }
 
-func (m *mockStore) Query(ctx context.Context, sql string) (PostgresQueryResult, error) {
+func (m *mockStore) Query(ctx context.Context, sql string) (QueryResult, error) {
 	return m.queryFunc(ctx, sql)
 }
 
@@ -27,8 +27,8 @@ func TestQueryFormatsResults(t *testing.T) {
 	t.Parallel()
 
 	store := &mockStore{
-		queryFunc: func(_ context.Context, _ string) (PostgresQueryResult, error) {
-			return PostgresQueryResult{
+		queryFunc: func(_ context.Context, _ string) (QueryResult, error) {
+			return QueryResult{
 				{"id": int32(1), "name": "Alice"},
 				{"id": int32(2), "name": "Bob"},
 			}, nil
@@ -45,7 +45,7 @@ func TestQueryFormatsResults(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := PostgresQueryResult{
+	want := QueryResult{
 		{"id": int32(1), "name": "Alice"},
 		{"id": int32(2), "name": "Bob"},
 	}

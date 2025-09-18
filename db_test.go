@@ -10,12 +10,12 @@ import (
 type mockPGDB struct {
 	queryCalled bool
 	closeCalled bool
-	results     PostgresQueryResult
+	results     QueryResult
 	queryErr    error
 	closeErr    error
 }
 
-func (m *mockPGDB) Query(_ context.Context, _ string) (PostgresQueryResult, error) {
+func (m *mockPGDB) Query(_ context.Context, _ string) (QueryResult, error) {
 	m.queryCalled = true
 
 	return m.results, m.queryErr
@@ -30,7 +30,7 @@ func (m *mockPGDB) Close(_ context.Context) error {
 func TestQueryReturnsResultsAndDuration(t *testing.T) {
 	t.Parallel()
 
-	want := PostgresQueryResult{
+	want := QueryResult{
 		{"id": int32(1), "name": "Alice"},
 		{"id": int32(2), "name": "Bob"},
 	}

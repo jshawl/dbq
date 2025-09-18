@@ -7,12 +7,19 @@ import (
 	"time"
 )
 
+type QueryResult []map[string]interface{}
+
+type Queryable interface {
+	Query(ctx context.Context, sql string) (QueryResult, error)
+	Close(ctx context.Context) error
+}
+
 type DB struct {
-	inner PGDBI // my interface, not the struct
+	inner Queryable
 }
 
 type DBQueryResult struct {
-	Results  PostgresQueryResult
+	Results  QueryResult
 	Duration time.Duration
 }
 
@@ -21,7 +28,7 @@ var (
 	ErrDBClose = errors.New("failed to call Close")
 )
 
-func NewDB(inner PGDBI) *DB {
+func NewDB(inner Queryable) *DB {
 	return &DB{inner: inner}
 }
 
