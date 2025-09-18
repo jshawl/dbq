@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: postgres_db
+    container_name: postgres
     environment:
       POSTGRES_DB: dbq_test
       POSTGRES_USER: admin
