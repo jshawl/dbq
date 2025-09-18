@@ -30,56 +30,65 @@ func setupDatabase(t *testing.T, dsn string) PGDB {
 
 func TestNewPostgresDB(t *testing.T) {
 	t.Parallel()
-	database := setupDatabase(t, dsn)
-	_ = database
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		database := setupDatabase(t, dsn)
+		_ = database
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := NewPostgresDB(t.Context(), "")
+		if err == nil {
+			t.Fatal("expected error for pgdb Connect")
+		}
+	})
 }
 
-func TestPGDBConnectErr(t *testing.T) {
+func TestPGDB_Query(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-	_, err := NewPostgresDB(ctx, "")
-	if err == nil {
-		t.Fatal("expected error for pgdb Connect")
-	}
-}
+		database := setupDatabase(t, dsn)
 
-func TestPGDBQuery(t *testing.T) {
-	t.Parallel()
-	database := setupDatabase(t, dsn)
+		want := []map[string]interface{}{
+			{
+				"id":         1,
+				"first_name": "John",
+			},
+			{
+				"id":         2,
+				"first_name": "Jane",
+			},
+		}
 
-	want := []map[string]interface{}{
-		{
-			"id":         1,
-			"first_name": "John",
-		},
-		{
-			"id":         2,
-			"first_name": "Jane",
-		},
-	}
+		have, err := database.Query(context.Background(), "SELECT * FROM users")
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
 
-	have, err := database.Query(context.Background(), "SELECT * FROM users")
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	for i := range want {
-		for k, v := range want[i] {
-			if fmt.Sprintf("%v", have[i][k]) != fmt.Sprintf("%v", v) {
-				t.Errorf("row %d column %s: want %v, got %v", i, k, v, have[i][k])
+		for i := range want {
+			for k, v := range want[i] {
+				if fmt.Sprintf("%v", have[i][k]) != fmt.Sprintf("%v", v) {
+					t.Errorf("row %d column %s: want %v, got %v", i, k, v, have[i][k])
+				}
 			}
 		}
-	}
-}
+	})
 
-func TestPGDBQueryErr(t *testing.T) {
-	t.Parallel()
-	database := setupDatabase(t, dsn)
+	t.Run("error", func(t *testing.T) {
+		t.Parallel()
 
-	_, err := database.Query(context.Background(), "! not sql !")
-	if err == nil {
-		t.Fatalf("expected error for pgdb Query")
-	}
+		database := setupDatabase(t, dsn)
+
+		_, err := database.Query(context.Background(), "! not sql !")
+		if err == nil {
+			t.Fatalf("expected error for pgdb Query")
+		}
+	})
 }
