@@ -1,41 +1,53 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
 
-func TestNewPostgresDB(t *testing.T) {
-	t.Parallel()
+const dsn = "postgres://admin:password@localhost:5432/dbq_test"
 
-	dsn := "postgres://admin:password@localhost:5432/dbq_test"
+func setupDatabase(t *testing.T, dsn string) PGDB {
+	t.Helper()
 
-	ctx := t.Context()
+	ctx := context.Background()
 
 	database, err := NewPostgresDB(ctx, dsn)
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatalf("setup failed: %v", err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := database.Close(ctx)
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Errorf("cleanup failed: %v", err)
 		}
-	}()
+	})
+
+	return database
+}
+
+func TestNewPostgresDB(t *testing.T) {
+	t.Parallel()
+	database := setupDatabase(t, dsn)
+	_ = database
+}
+
+func TestPGDBConnectErr(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	_, err := NewPostgresDB(ctx, "")
+	if err == nil {
+		t.Fatal("expected error for pgdb Connect")
+	}
 }
 
 func TestPGDBQuery(t *testing.T) {
 	t.Parallel()
-
-	dsn := "postgres://admin:password@localhost:5432/dbq_test"
-
-	ctx := t.Context()
-
-	database, err := NewPostgresDB(ctx, dsn)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	database := setupDatabase(t, dsn)
 
 	want := []map[string]interface{}{
 		{
@@ -48,7 +60,7 @@ func TestPGDBQuery(t *testing.T) {
 		},
 	}
 
-	have, err := database.Query(t.Context(), "SELECT * FROM users")
+	have, err := database.Query(context.Background(), "SELECT * FROM users")
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -60,11 +72,14 @@ func TestPGDBQuery(t *testing.T) {
 			}
 		}
 	}
+}
 
-	defer func() {
-		err := database.Close(ctx)
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-	}()
+func TestPGDBQueryErr(t *testing.T) {
+	t.Parallel()
+	database := setupDatabase(t, dsn)
+
+	_, err := database.Query(context.Background(), "! not sql !")
+	if err == nil {
+		t.Fatalf("expected error for pgdb Query")
+	}
 }
