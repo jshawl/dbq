@@ -6,59 +6,80 @@ import (
 	"testing"
 )
 
-type mockStore struct {
-	queryFunc func(ctx context.Context, sql string) (QueryResult, error)
-	closeFunc func(ctx context.Context) error
-}
+const dsn = "postgres://admin:password@localhost:5432/dbq_test"
 
-func (m *mockStore) Query(ctx context.Context, sql string) (QueryResult, error) {
-	return m.queryFunc(ctx, sql)
-}
-
-func (m *mockStore) Close(ctx context.Context) error {
-	if m.closeFunc != nil {
-		return m.closeFunc(ctx)
-	}
-
-	return nil
-}
-
-func TestQueryFormatsResults(t *testing.T) {
-	t.Parallel()
-
-	store := &mockStore{
-		queryFunc: func(_ context.Context, _ string) (QueryResult, error) {
-			return QueryResult{
-				{"id": int32(1), "name": "Alice"},
-				{"id": int32(2), "name": "Bob"},
-			}, nil
-		},
-		closeFunc: func(_ context.Context) error {
-			return nil
-		},
-	}
+func setupDatabase(t *testing.T, dsn string) PGDB {
+	t.Helper()
 
 	ctx := context.Background()
 
-	got, err := store.Query(ctx, "SELECT * FROM users")
+	database, err := NewPostgresDB(ctx, dsn)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("setup failed: %v", err)
 	}
 
-	want := QueryResult{
-		{"id": int32(1), "name": "Alice"},
-		{"id": int32(2), "name": "Bob"},
+	t.Cleanup(func() {
+		err := database.Close(ctx)
+		if err != nil {
+			t.Errorf("cleanup failed: %v", err)
+		}
+	})
+
+	return database
+}
+
+func TestNewPostgresDB(t *testing.T) {
+	t.Parallel()
+	database := setupDatabase(t, dsn)
+	_ = database
+}
+
+func TestPGDBConnectErr(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	_, err := NewPostgresDB(ctx, "")
+	if err == nil {
+		t.Fatal("expected error for pgdb Connect")
+	}
+}
+
+func TestPGDBQuery(t *testing.T) {
+	t.Parallel()
+	database := setupDatabase(t, dsn)
+
+	want := []map[string]interface{}{
+		{
+			"id":         1,
+			"first_name": "John",
+		},
+		{
+			"id":         2,
+			"first_name": "Jane",
+		},
 	}
 
-	if len(got) != len(want) {
-		t.Fatalf("expected %d rows, got %d", len(want), len(got))
+	have, err := database.Query(context.Background(), "SELECT * FROM users")
+	if err != nil {
+		t.Fatalf("%v", err)
 	}
 
 	for i := range want {
 		for k, v := range want[i] {
-			if fmt.Sprintf("%v", got[i][k]) != fmt.Sprintf("%v", v) {
-				t.Errorf("row %d column %s: want %v, got %v", i, k, v, got[i][k])
+			if fmt.Sprintf("%v", have[i][k]) != fmt.Sprintf("%v", v) {
+				t.Errorf("row %d column %s: want %v, got %v", i, k, v, have[i][k])
 			}
 		}
+	}
+}
+
+func TestPGDBQueryErr(t *testing.T) {
+	t.Parallel()
+	database := setupDatabase(t, dsn)
+
+	_, err := database.Query(context.Background(), "! not sql !")
+	if err == nil {
+		t.Fatalf("expected error for pgdb Query")
 	}
 }
