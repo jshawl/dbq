@@ -10,4 +10,7 @@ run:
 	go run .
 
 test:
-	go test -v ./...
+	go test -v . -coverprofile coverage.out
+
+test-cover: test
+    go tool cover -html=coverage.out
