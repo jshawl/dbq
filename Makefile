@@ -13,4 +13,4 @@ test:
 	go test -v . -coverprofile coverage.out
 
 test-cover: test
-    go tool cover -html=coverage.out
+    go tool cover -func=coverage.out
