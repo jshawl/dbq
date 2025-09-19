@@ -4,6 +4,7 @@ linters:
   disable:
     - depguard
     - wsl
+    - funlen
   enable:
     - wsl_v5
 formatters:
