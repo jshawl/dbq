@@ -6,7 +6,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-//nolint:ireturn
 func AssertMsgType[T interface{}](t *testing.T, cmd tea.Cmd) T {
 	t.Helper()
 

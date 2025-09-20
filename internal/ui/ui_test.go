@@ -15,7 +15,6 @@ import (
 
 var errSQL = errors.New("sql error")
 
-//nolint:ireturn
 func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 	t.Helper()
 

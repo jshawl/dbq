@@ -6,6 +6,7 @@ linters:
     - wsl
     - funlen
     - revive
+    - ireturn
   enable:
     - wsl_v5
 formatters:
