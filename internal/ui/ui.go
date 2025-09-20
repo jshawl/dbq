@@ -35,7 +35,7 @@ type QueryMsg struct {
 }
 
 func Run() {
-	p := tea.NewProgram(InitialModel())
+	p := tea.NewProgram(InitialModel(), tea.WithAltScreen())
 
 	_, err := p.Run()
 	if err != nil {
@@ -142,18 +142,14 @@ func (m Model) View() string {
 	if m.Err != nil {
 		return fmt.Sprintf(
 			"%s\n%s\n%s\n%s",
-			m.promptView(),
+			m.TextInput.View(),
 			m.Query,
 			m.durationView(),
 			m.Err.Error(),
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s", m.promptView(), m.resultsView())
-}
-
-func (m Model) promptView() string {
-	return m.TextInput.View() + "\n"
+	return fmt.Sprintf("%s\n%s", m.TextInput.View(), m.resultsView())
 }
 
 func (m Model) durationView() string {
@@ -162,6 +158,7 @@ func (m Model) durationView() string {
 	}
 
 	numStr := "1 row"
+
 	numResults := len(m.Results.Results)
 	if numResults != 1 {
 		numStr = fmt.Sprintf("%d rows", numResults)
@@ -182,5 +179,5 @@ func (m Model) resultsView() string {
 		jsonStr = string(jsonData)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.Query, m.durationView(), jsonStr)
+	return fmt.Sprintf("%s\n%s", m.durationView(), jsonStr)
 }

@@ -59,6 +59,7 @@ func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryR
 			"id": userIDs[0],
 		})
 	}
+
 	return db.DBQueryResult{
 		Duration: duration,
 		Results:  rows,
