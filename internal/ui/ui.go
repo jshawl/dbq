@@ -88,7 +88,6 @@ func query(q string, db *db.DB) tea.Cmd {
 	}
 }
 
-//nolint:ireturn
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -130,12 +129,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	case history.TraveledMsg:
-		var cmd tea.Cmd
-
 		m.TextInput.SetValue(m.History.Value)
 		m.TextInput.SetCursor(len(m.History.Value))
 
-		return m, cmd
+		return m, nil
 	}
 
 	return m, tea.Batch(cmds...)
@@ -173,7 +170,7 @@ func (m Model) resultsView() string {
 	if len(m.Results.Results) > 0 {
 		jsonData, err := json.MarshalIndent(m.Results.Results, "", "  ")
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		jsonStr = string(jsonData)

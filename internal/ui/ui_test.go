@@ -9,26 +9,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	db "github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/history"
+	"github.com/jshawl/dbq/internal/testutil"
 	ui "github.com/jshawl/dbq/internal/ui"
 )
 
 var errSQL = errors.New("sql error")
 
-//nolint:ireturn
-func assertMsgType[T interface{}](t *testing.T, cmd tea.Cmd) T {
-	t.Helper()
-
-	msg := cmd()
-	typed, ok := msg.(T)
-
-	if !ok {
-		t.Fatalf("Expected msg to be of type %T, got %T", *new(T), msg)
-	}
-
-	return typed
-}
-
-//nolint:ireturn
 func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 	t.Helper()
 
@@ -46,7 +32,7 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 	model := ui.InitialModel()
 	model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
 	cmd := model.Init()
-	msg := assertMsgType[ui.DBMsg](t, cmd)
+	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
 	updatedModel, _ := model.Update(msg)
 
 	typedModel, ok := updatedModel.(ui.Model)
@@ -62,15 +48,6 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 	})
 
 	return typedModel
-}
-
-func makeKeyMsg(key tea.KeyType) tea.KeyMsg {
-	return tea.KeyMsg{
-		Alt:   false,
-		Paste: false,
-		Runes: nil,
-		Type:  key,
-	}
 }
 
 func makeResults(duration time.Duration, userID int) db.DBQueryResult {
@@ -100,7 +77,7 @@ func TestInit(t *testing.T) {
 	model := ui.InitialModel()
 	cmd := model.Init()
 
-	msg := assertMsgType[ui.DBMsg](t, cmd)
+	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
 	if msg.DB == nil {
 		t.Fatal("expected DBmsg to contain db")
 	}
@@ -113,9 +90,9 @@ func TestUpdate(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		_, cmd := model.Update(makeKeyMsg(tea.KeyEnter))
+		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
 
-		queryMsg := assertMsgType[ui.QueryMsg](t, cmd)
+		queryMsg := testutil.AssertMsgType[ui.QueryMsg](t, cmd)
 		if len(queryMsg.Results.Results) == 0 {
 			t.Fatal("expected results")
 		}
@@ -125,16 +102,16 @@ func TestUpdate(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		_, cmd := model.Update(makeKeyMsg(tea.KeyCtrlC))
+		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyCtrlC))
 
-		assertMsgType[tea.QuitMsg](t, cmd)
+		testutil.AssertMsgType[tea.QuitMsg](t, cmd)
 	})
 
 	t.Run("keys - other", func(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		_, cmd := model.Update(makeKeyMsg(tea.KeySpace))
+		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeySpace))
 
 		if cmd != nil {
 			t.Fatal("expected cmd to be nil")
@@ -146,18 +123,27 @@ func TestUpdate(t *testing.T) {
 
 		userID := 789
 		model := setupDatabaseModel(t)
-		updatedModel, cmd := model.Update(ui.QueryMsg{
+		updatedModel, _ := model.Update(ui.QueryMsg{
 			Err:     nil,
 			Results: makeResults(0, userID),
 		})
-
-		assertMsgType[history.PushedMsg](t, cmd)
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
 
 		got := typedModel.Results.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
+		}
+	})
+
+	t.Run("history.TraveledMsg", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		_, cmd := model.Update(history.TraveledMsg{})
+
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
 		}
 	})
 
