@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,26 +16,22 @@ type Model struct {
 }
 
 func Init(path string) Model {
-	_, errStat := os.Stat(path)
-
 	database, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if errStat != nil {
-		sqlStmt := `
-		create table history (
+	sqlStmt := `
+		create table if not exists history (
 			id integer not null primary key,
 			query text,
 			created_at datetime default current_timestamp
 		);
 	`
 
-		_, err := database.ExecContext(context.Background(), sqlStmt)
-		if err != nil {
-			log.Fatal(err)
-		}
+	_, err = database.ExecContext(context.Background(), sqlStmt)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	return Model{
