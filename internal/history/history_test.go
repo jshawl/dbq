@@ -71,6 +71,7 @@ func setupHistoryModel(t *testing.T) history.Model {
 	return model
 }
 
+//nolint:cyclop
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -82,6 +83,19 @@ func TestUpdate(t *testing.T) {
 		hist := setupHistoryModel(t)
 		_, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
 		testutil.AssertMsgType[history.PushedMsg](t, cmd)
+	})
+
+	t.Run("UnknownMsg", func(t *testing.T) {
+		t.Parallel()
+
+		var cmd tea.Cmd
+
+		hist := setupHistoryModel(t)
+
+		_, cmd = hist.Update(nil)
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
+		}
 	})
 
 	t.Run("TravelMsg(previous) does not update the Value if no results", func(t *testing.T) {

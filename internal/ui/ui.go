@@ -129,12 +129,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	case history.TraveledMsg:
-		var cmd tea.Cmd
-
 		m.TextInput.SetValue(m.History.Value)
 		m.TextInput.SetCursor(len(m.History.Value))
 
-		return m, cmd
+		return m, nil
 	}
 
 	return m, tea.Batch(cmds...)

@@ -138,6 +138,17 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
+	t.Run("history.TraveledMsg", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		_, cmd := model.Update(history.TraveledMsg{})
+
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
+		}
+	})
+
 	t.Run("unknown msg", func(t *testing.T) {
 		t.Parallel()
 
