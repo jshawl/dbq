@@ -1,4 +1,4 @@
-package main
+package ui
 
 // A simple program demonstrating the text input component from the Bubbles
 // component library.
@@ -12,27 +12,28 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	db "github.com/jshawl/dbq/internal/db"
 )
 
 type Model struct {
-	textInput textinput.Model
-	query     string
-	results   DBQueryResult
-	err       error
-	db        *DB
+	TextInput textinput.Model
+	Query     string
+	Results   db.DBQueryResult
+	Err       error
+	DB        *db.DB
 }
 
 type DBMsg struct {
-	db *DB
+	DB *db.DB
 }
 
 type QueryMsg struct {
-	err     error
-	results DBQueryResult
+	Err     error
+	Results db.DBQueryResult
 }
 
-func ui() {
-	p := tea.NewProgram(initialModel())
+func Run() {
+	p := tea.NewProgram(InitialModel())
 
 	_, err := p.Run()
 	if err != nil {
@@ -40,7 +41,7 @@ func ui() {
 	}
 }
 
-func initialModel() Model {
+func InitialModel() Model {
 	input := textinput.New()
 	input.Placeholder = "SELECT * FROM users LIMIT 1;"
 	input.Focus()
@@ -48,38 +49,38 @@ func initialModel() Model {
 	input.Width = 80
 
 	return Model{
-		db:    nil,
-		err:   nil,
-		query: "",
-		results: DBQueryResult{
-			Results:  QueryResult{},
+		DB:    nil,
+		Err:   nil,
+		Query: "",
+		Results: db.DBQueryResult{
+			Results:  db.QueryResult{},
 			Duration: time.Duration(0),
 		},
-		textInput: input,
+		TextInput: input,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		pgdb, _ := NewPostgresDB(ctx, "postgres://admin:password@localhost:5432/dbq_test")
-		db := NewDB(pgdb)
+		pgdb, _ := db.NewPostgresDB(ctx, "postgres://admin:password@localhost:5432/dbq_test")
+		db := db.NewDB(pgdb)
 
 		return DBMsg{
-			db: db,
+			DB: db,
 		}
 	}
 }
 
-func query(q string, db *DB) tea.Cmd {
+func query(q string, db *db.DB) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
 		results, err := db.Query(ctx, q)
 
 		return QueryMsg{
-			err:     err,
-			results: results,
+			Err:     err,
+			Results: results,
 		}
 	}
 }
@@ -91,9 +92,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			m.query = m.textInput.Value()
+			m.Query = m.TextInput.Value()
 
-			msg := query(m.query, m.db)
+			msg := query(m.Query, m.DB)
 
 			return m, msg
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -101,18 +102,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			var cmd tea.Cmd
 
-			m.textInput, cmd = m.textInput.Update(msg)
+			m.TextInput, cmd = m.TextInput.Update(msg)
 
 			return m, cmd
 		}
 
 	case QueryMsg:
-		m.results = msg.results
-		m.err = msg.err
+		m.Results = msg.Results
+		m.Err = msg.Err
 
 		return m, nil
 	case DBMsg:
-		m.db = msg.db
+		m.DB = msg.DB
 
 		return m, nil
 	default:
@@ -125,23 +126,23 @@ func (m Model) View() string {
 }
 
 func (m Model) promptView() string {
-	return m.textInput.View() + "\n"
+	return m.TextInput.View() + "\n"
 }
 
 func (m Model) resultsView() string {
 	durationStr := ""
-	if m.results.Duration.Seconds() > 0 {
-		durationStr = fmt.Sprintf("%.3fs\n", m.results.Duration.Seconds())
+	if m.Results.Duration.Seconds() > 0 {
+		durationStr = fmt.Sprintf("%.3fs\n", m.Results.Duration.Seconds())
 	}
 
-	if m.err != nil {
-		return fmt.Sprintf("%s\n%s\n%s", m.query, durationStr, m.err.Error())
+	if m.Err != nil {
+		return fmt.Sprintf("%s\n%s\n%s", m.Query, durationStr, m.Err.Error())
 	}
 
 	jsonStr := ""
 
-	if len(m.results.Results) > 0 {
-		jsonData, err := json.MarshalIndent(m.results.Results, "", "  ")
+	if len(m.Results.Results) > 0 {
+		jsonData, err := json.MarshalIndent(m.Results.Results, "", "  ")
 		if err != nil {
 			panic(err)
 		}
@@ -149,5 +150,5 @@ func (m Model) resultsView() string {
 		jsonStr = string(jsonData)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.query, durationStr, jsonStr)
+	return fmt.Sprintf("%s\n%s\n%s", m.Query, durationStr, jsonStr)
 }

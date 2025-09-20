@@ -1,21 +1,23 @@
-package main
+package db_test
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/jshawl/dbq/internal/db"
 )
 
 type mockPGDB struct {
 	queryCalled bool
 	closeCalled bool
-	results     QueryResult
+	results     db.QueryResult
 	queryErr    error
 	closeErr    error
 }
 
-func (m *mockPGDB) Query(_ context.Context, _ string) (QueryResult, error) {
+func (m *mockPGDB) Query(_ context.Context, _ string) (db.QueryResult, error) {
 	m.queryCalled = true
 
 	return m.results, m.queryErr
@@ -35,7 +37,7 @@ func TestDB_Query(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		want := QueryResult{
+		want := db.QueryResult{
 			{"id": int32(1), "name": "Alice"},
 			{"id": int32(2), "name": "Bob"},
 		}
@@ -47,7 +49,7 @@ func TestDB_Query(t *testing.T) {
 			closeErr:    nil,
 		}
 
-		db := NewDB(mock)
+		db := db.NewDB(mock)
 
 		ctx := context.Background()
 		got, _ := db.Query(ctx, "SELECT * FROM users")
@@ -79,7 +81,7 @@ func TestDB_Query(t *testing.T) {
 			queryCalled: false,
 			queryErr:    fmt.Errorf("%w", ErrTestQuery),
 		}
-		db := NewDB(mock)
+		db := db.NewDB(mock)
 
 		_, err := db.Query(context.Background(), "bad sql")
 		if err == nil {
@@ -98,7 +100,7 @@ func TestDB_Close(t *testing.T) {
 		queryCalled: false,
 		queryErr:    fmt.Errorf("%w", ErrTestQuery),
 	}
-	db := NewDB(mock)
+	db := db.NewDB(mock)
 
 	err := db.Close(context.Background())
 	if err != nil {

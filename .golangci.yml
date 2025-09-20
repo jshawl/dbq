@@ -5,6 +5,7 @@ linters:
     - depguard
     - wsl
     - funlen
+    - revive
   enable:
     - wsl_v5
 formatters:

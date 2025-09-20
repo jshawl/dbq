@@ -1,19 +1,21 @@
-package main
+package db_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/jshawl/dbq/internal/db"
 )
 
 const DSN = "postgres://admin:password@localhost:5432/dbq_test"
 
-func setupDatabase(t *testing.T, dsn string) PGDB {
+func setupDatabase(t *testing.T, dsn string) db.PGDB {
 	t.Helper()
 
 	ctx := context.Background()
 
-	database, err := NewPostgresDB(ctx, dsn)
+	database, err := db.NewPostgresDB(ctx, dsn)
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
@@ -41,7 +43,7 @@ func TestNewPostgresDB(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := NewPostgresDB(t.Context(), "")
+		_, err := db.NewPostgresDB(t.Context(), "")
 		if err == nil {
 			t.Fatal("expected error for pgdb Connect")
 		}
