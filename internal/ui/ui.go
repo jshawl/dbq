@@ -170,7 +170,7 @@ func (m Model) resultsView() string {
 	if len(m.Results.Results) > 0 {
 		jsonData, err := json.MarshalIndent(m.Results.Results, "", "  ")
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		jsonStr = string(jsonData)

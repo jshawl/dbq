@@ -45,7 +45,7 @@ func (h Model) Cleanup() {
 	defer func() {
 		err := h.db.Close()
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 }
@@ -132,7 +132,7 @@ func (model Model) push(entry string) tea.Cmd {
 		defer func() {
 			err := stmt.Close()
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}()
 
@@ -173,7 +173,7 @@ func (model Model) travel(direction string) tea.Cmd {
 		defer func() {
 			err := stmt.Close()
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}()
 

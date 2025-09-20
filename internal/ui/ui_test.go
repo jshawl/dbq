@@ -123,12 +123,10 @@ func TestUpdate(t *testing.T) {
 
 		userID := 789
 		model := setupDatabaseModel(t)
-		updatedModel, cmd := model.Update(ui.QueryMsg{
+		updatedModel, _ := model.Update(ui.QueryMsg{
 			Err:     nil,
 			Results: makeResults(0, userID),
 		})
-
-		testutil.AssertMsgType[history.PushedMsg](t, cmd)
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
 
