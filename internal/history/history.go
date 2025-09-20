@@ -4,49 +4,44 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type history struct {
+type Model struct {
 	Value  string
 	cursor int64
 	db     *sql.DB
 }
 
-func Init(path string) history {
-	_, errStat := os.Stat(path)
-
+func Init(path string) Model {
 	database, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if errStat != nil {
-		sqlStmt := `
-		create table history (
+	sqlStmt := `
+		create table if not exists history (
 			id integer not null primary key,
 			query text,
 			created_at datetime default current_timestamp
 		);
 	`
 
-		_, err := database.ExecContext(context.Background(), sqlStmt)
-		if err != nil {
-			log.Fatal(err)
-		}
+	_, err = database.ExecContext(context.Background(), sqlStmt)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return history{
+	return Model{
 		cursor: 0,
 		db:     database,
 		Value:  "",
 	}
 }
 
-func (h history) Cleanup() {
+func (h Model) Cleanup() {
 	defer func() {
 		err := h.db.Close()
 		if err != nil {
@@ -72,7 +67,8 @@ type TraveledMsg struct {
 	value  string
 }
 
-func (model history) Update(msg tea.Msg) (history, tea.Cmd) {
+func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case PushMsg:
 		entry := msg.Entry
@@ -91,12 +87,19 @@ func (model history) Update(msg tea.Msg) (history, tea.Cmd) {
 		model.Value = msg.value
 
 		return model, nil
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyUp:
+			return model, func() tea.Msg { return TravelMsg{Direction: "previous"} }
+		case tea.KeyDown:
+			return model, func() tea.Msg { return TravelMsg{Direction: "next"} }
+		}
 	}
 
 	return model, nil
 }
 
-func (model history) push(entry string) tea.Cmd {
+func (model Model) push(entry string) tea.Cmd {
 	return func() tea.Msg {
 		transaction, err := model.db.BeginTx(
 			context.Background(),
@@ -139,7 +142,7 @@ func (model history) push(entry string) tea.Cmd {
 	}
 }
 
-func (model history) travel(direction string) tea.Cmd {
+func (model Model) travel(direction string) tea.Cmd {
 	return func() tea.Msg {
 		_, err := model.db.BeginTx(
 			context.Background(),
@@ -155,7 +158,11 @@ func (model history) travel(direction string) tea.Cmd {
 		}
 
 		if direction == "previous" {
-			sql = "select id, query from history where id < (?) order by id desc limit 1;"
+			if model.cursor == 0 {
+				sql = "select id, query from history where 0 = (?) order by id desc limit 1;"
+			} else {
+				sql = "select id, query from history where id < (?) order by id desc limit 1;"
+			}
 		}
 
 		stmt, _ := model.db.PrepareContext(

@@ -132,6 +132,32 @@ func TestUpdate(t *testing.T) {
 		hist.Cleanup()
 	})
 
+	t.Run("TravelMsg(previous) returns the last row if the cursor is 0", func(t *testing.T) {
+		t.Parallel()
+
+		dir := setupHistoryStore(t)
+		path := dir + "/foo.db"
+
+		hist := history.Init(path)
+
+		var cmd tea.Cmd
+
+		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
+		assertMsgType[history.PushedMsg](t, cmd)
+
+		// reset
+		hist, _ = hist.Update(history.PushedMsg{})
+
+		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
+		hist, _ = hist.Update(assertMsgType[history.TraveledMsg](t, cmd))
+
+		if hist.Value != "select * from users limit 1;" {
+			t.Fatalf("expected current, got %s", hist.Value)
+		}
+
+		hist.Cleanup()
+	})
+
 	t.Run("TravelMsg(previous) sets the Value to the penultimate row", func(t *testing.T) {
 		t.Parallel()
 
