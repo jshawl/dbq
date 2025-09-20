@@ -186,6 +186,7 @@ func TestView(t *testing.T) {
 			t.Fatalf("expected model error to be visible\n %s", view)
 		}
 	})
+
 	t.Run("errors", func(t *testing.T) {
 		t.Parallel()
 
