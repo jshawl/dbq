@@ -88,11 +88,12 @@ func query(q string, db *db.DB) tea.Cmd {
 	}
 }
 
-//nolint:ireturn,cyclop
+//nolint:ireturn
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
 
 	m.TextInput, cmd = m.TextInput.Update(msg)
 	cmds = append(cmds, cmd)

@@ -73,6 +73,7 @@ type TraveledMsg struct {
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case PushMsg:
 		entry := msg.Entry
@@ -98,7 +99,6 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case tea.KeyDown:
 			return model, func() tea.Msg { return TravelMsg{Direction: "next"} }
 		}
-
 	}
 
 	return model, nil
