@@ -161,7 +161,13 @@ func (m Model) durationView() string {
 		return ""
 	}
 
-	return fmt.Sprintf("%.3fs\n", m.Results.Duration.Seconds())
+	numStr := "1 row"
+	numResults := len(m.Results.Results)
+	if numResults != 1 {
+		numStr = fmt.Sprintf("%d rows", numResults)
+	}
+
+	return fmt.Sprintf("(%s in %.3fs)\n", numStr, m.Results.Duration.Seconds())
 }
 
 func (m Model) resultsView() string {

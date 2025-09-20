@@ -50,14 +50,18 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 	return typedModel
 }
 
-func makeResults(duration time.Duration, userID int) db.DBQueryResult {
+func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryResult {
+	rows := []map[string]interface{}{
+		{"id": userID},
+	}
+	if len(userIDs) > 0 {
+		rows = append(rows, map[string]interface{}{
+			"id": userIDs[0],
+		})
+	}
 	return db.DBQueryResult{
 		Duration: duration,
-		Results: db.QueryResult{
-			map[string]interface{}{
-				"id": userID,
-			},
-		},
+		Results:  rows,
 	}
 }
 
@@ -162,14 +166,26 @@ func TestUpdate(t *testing.T) {
 func TestView(t *testing.T) {
 	t.Parallel()
 
-	t.Run("duration", func(t *testing.T) {
+	t.Run("duration with 1 row", func(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
 		model.Results = makeResults(time.Millisecond*2345, 123)
 
 		view := model.View()
-		if !strings.Contains(view, "2.345s") {
+		if !strings.Contains(view, "(1 row in 2.345s)") {
+			t.Fatalf("expected model error to be visible\n %s", view)
+		}
+	})
+
+	t.Run("duration with 2 rows", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		model.Results = makeResults(time.Millisecond*2345, 123, 456)
+
+		view := model.View()
+		if !strings.Contains(view, "(2 rows in 2.345s)") {
 			t.Fatalf("expected model error to be visible\n %s", view)
 		}
 	})
