@@ -122,6 +122,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.Err != nil {
+		return fmt.Sprintf("%s\n%s\n%s", m.Query, m.durationView(), m.Err.Error())
+	}
+
 	return fmt.Sprintf("%s\n%s", m.promptView(), m.resultsView())
 }
 
@@ -129,16 +133,15 @@ func (m Model) promptView() string {
 	return m.TextInput.View() + "\n"
 }
 
+func (m Model) durationView() string {
+	if m.Results.Duration.Seconds() == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("%.3fs\n", m.Results.Duration.Seconds())
+}
+
 func (m Model) resultsView() string {
-	durationStr := ""
-	if m.Results.Duration.Seconds() > 0 {
-		durationStr = fmt.Sprintf("%.3fs\n", m.Results.Duration.Seconds())
-	}
-
-	if m.Err != nil {
-		return fmt.Sprintf("%s\n%s\n%s", m.Query, durationStr, m.Err.Error())
-	}
-
 	jsonStr := ""
 
 	if len(m.Results.Results) > 0 {
@@ -150,5 +153,5 @@ func (m Model) resultsView() string {
 		jsonStr = string(jsonData)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.Query, durationStr, jsonStr)
+	return fmt.Sprintf("%s\n%s\n%s", m.Query, m.durationView(), jsonStr)
 }
