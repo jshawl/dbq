@@ -1,6 +1,9 @@
-// package main implements a query tool for databases
 package main
 
+import (
+	"github.com/jshawl/dbq/internal/ui"
+)
+
 func main() {
-	ui()
+	ui.Run()
 }

@@ -1,4 +1,4 @@
-package main
+package ui_test
 
 import (
 	"errors"
@@ -7,6 +7,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	db "github.com/jshawl/dbq/internal/db"
+	ui "github.com/jshawl/dbq/internal/ui"
 )
 
 var errSQL = errors.New("sql error")
@@ -37,22 +39,22 @@ func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 	return typed
 }
 
-func setupDatabaseModel(t *testing.T) Model {
+func setupDatabaseModel(t *testing.T) ui.Model {
 	t.Helper()
 
-	model := initialModel()
-	model.textInput.SetValue("SELECT * FROM users LIMIT 1;")
+	model := ui.InitialModel()
+	model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
 	cmd := model.Init()
-	msg := assertMsgType[DBMsg](t, cmd)
+	msg := assertMsgType[ui.DBMsg](t, cmd)
 	updatedModel, _ := model.Update(msg)
 
-	typedModel, ok := updatedModel.(Model)
+	typedModel, ok := updatedModel.(ui.Model)
 	if !ok {
 		t.Fatal("expected updated model of type Model")
 	}
 
 	t.Cleanup(func() {
-		err := typedModel.db.Close(t.Context())
+		err := typedModel.DB.Close(t.Context())
 		if err != nil {
 			t.Errorf("cleanup failed: %v", err)
 		}
@@ -70,10 +72,10 @@ func makeKeyMsg(key tea.KeyType) tea.KeyMsg {
 	}
 }
 
-func makeResults(duration time.Duration, userID int) DBQueryResult {
-	return DBQueryResult{
+func makeResults(duration time.Duration, userID int) db.DBQueryResult {
+	return db.DBQueryResult{
 		Duration: duration,
-		Results: QueryResult{
+		Results: db.QueryResult{
 			map[string]interface{}{
 				"id": userID,
 			},
@@ -84,9 +86,9 @@ func makeResults(duration time.Duration, userID int) DBQueryResult {
 func TestInitialModel(t *testing.T) {
 	t.Parallel()
 
-	model := initialModel()
+	model := ui.InitialModel()
 
-	if model.textInput.Placeholder != "SELECT * FROM users LIMIT 1;" {
+	if model.TextInput.Placeholder != "SELECT * FROM users LIMIT 1;" {
 		t.Fatal("expected placeholder to be a select statement")
 	}
 }
@@ -94,11 +96,11 @@ func TestInitialModel(t *testing.T) {
 func TestInit(t *testing.T) {
 	t.Parallel()
 
-	model := initialModel()
+	model := ui.InitialModel()
 	cmd := model.Init()
 
-	msg := assertMsgType[DBMsg](t, cmd)
-	if msg.db == nil {
+	msg := assertMsgType[ui.DBMsg](t, cmd)
+	if msg.DB == nil {
 		t.Fatal("expected DBmsg to contain db")
 	}
 }
@@ -112,8 +114,8 @@ func TestUpdate(t *testing.T) {
 		model := setupDatabaseModel(t)
 		_, cmd := model.Update(makeKeyMsg(tea.KeyEnter))
 
-		queryMsg := assertMsgType[QueryMsg](t, cmd)
-		if len(queryMsg.results.Results) == 0 {
+		queryMsg := assertMsgType[ui.QueryMsg](t, cmd)
+		if len(queryMsg.Results.Results) == 0 {
 			t.Fatal("expected results")
 		}
 	})
@@ -143,18 +145,18 @@ func TestUpdate(t *testing.T) {
 
 		userID := 789
 		model := setupDatabaseModel(t)
-		updatedModel, cmd := model.Update(QueryMsg{
-			err:     nil,
-			results: makeResults(0, userID),
+		updatedModel, cmd := model.Update(ui.QueryMsg{
+			Err:     nil,
+			Results: makeResults(0, userID),
 		})
 
 		if cmd != nil {
 			t.Fatal("expected cmd to be nil")
 		}
 
-		typedModel := assertModelType[Model](t, updatedModel)
+		typedModel := assertModelType[ui.Model](t, updatedModel)
 
-		got := typedModel.results.Results[0]["id"]
+		got := typedModel.Results.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
 		}
@@ -179,7 +181,7 @@ func TestView(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		model.results = makeResults(time.Millisecond*2345, 123)
+		model.Results = makeResults(time.Millisecond*2345, 123)
 
 		view := model.View()
 		if !strings.Contains(view, "2.345s") {
@@ -191,7 +193,7 @@ func TestView(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		model.err = errSQL
+		model.Err = errSQL
 
 		view := model.View()
 		if !strings.Contains(view, "sql error") {
@@ -203,7 +205,7 @@ func TestView(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		model.results = makeResults(0, 123)
+		model.Results = makeResults(0, 123)
 
 		view := model.View()
 		if !strings.Contains(view, "\"id\": 123") {
