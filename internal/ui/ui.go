@@ -12,7 +12,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	db "github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/history"
 )
 
 type Model struct {
@@ -21,6 +22,7 @@ type Model struct {
 	Results   db.DBQueryResult
 	Err       error
 	DB        *db.DB
+	History   history.Model
 }
 
 type DBMsg struct {
@@ -57,6 +59,7 @@ func InitialModel() Model {
 			Duration: time.Duration(0),
 		},
 		TextInput: input,
+		History:   history.Init("/Users/jesse/.dbqhistory"),
 	}
 }
 
@@ -85,8 +88,17 @@ func query(q string, db *db.DB) tea.Cmd {
 	}
 }
 
-//nolint:ireturn
+//nolint:ireturn,cyclop
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	m.TextInput, cmd = m.TextInput.Update(msg)
+	cmds = append(cmds, cmd)
+	m.History, cmd = m.History.Update(msg)
+	cmds = append(cmds, cmd)
+
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -94,36 +106,49 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			m.Query = m.TextInput.Value()
 
-			msg := query(m.Query, m.DB)
-
-			return m, msg
+			return m, query(m.Query, m.DB)
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.History.Cleanup()
+
 			return m, tea.Quit
-		default:
-			var cmd tea.Cmd
-
-			m.TextInput, cmd = m.TextInput.Update(msg)
-
-			return m, cmd
 		}
 
 	case QueryMsg:
+		var cmd tea.Cmd
+
 		m.Results = msg.Results
 		m.Err = msg.Err
 
-		return m, nil
+		if msg.Err == nil {
+			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
+		}
+
+		return m, cmd
 	case DBMsg:
 		m.DB = msg.DB
 
 		return m, nil
-	default:
-		return m, nil
+	case history.TraveledMsg:
+		var cmd tea.Cmd
+
+		m.TextInput.SetValue(m.History.Value)
+		m.TextInput.SetCursor(len(m.History.Value))
+
+		return m, cmd
 	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
 	if m.Err != nil {
-		return fmt.Sprintf("%s\n%s\n%s", m.Query, m.durationView(), m.Err.Error())
+		return fmt.Sprintf(
+			"%s\n%s\n%s\n%s",
+			m.promptView(),
+			m.Query,
+			m.durationView(),
+			m.Err.Error(),
+		)
 	}
 
 	return fmt.Sprintf("%s\n%s", m.promptView(), m.resultsView())

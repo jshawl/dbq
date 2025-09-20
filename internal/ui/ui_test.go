@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	db "github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/history"
 	ui "github.com/jshawl/dbq/internal/ui"
 )
 
@@ -150,9 +151,7 @@ func TestUpdate(t *testing.T) {
 			Results: makeResults(0, userID),
 		})
 
-		if cmd != nil {
-			t.Fatal("expected cmd to be nil")
-		}
+		assertMsgType[history.PushedMsg](t, cmd)
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
 
