@@ -59,7 +59,7 @@ func InitialModel() Model {
 			Duration: time.Duration(0),
 		},
 		TextInput: input,
-		History:   history.Init("/Users/jesse/.dbqhistory"),
+		History:   history.Init("/tmp/.dbqhistory"),
 	}
 }
 
