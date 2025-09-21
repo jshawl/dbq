@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -217,11 +218,19 @@ func (m Model) durationView() string {
 
 func (m Model) resultsView() string {
 	var builder strings.Builder
+
 	for row := range m.Results.Results {
 		builder.WriteString("---\n")
 
-		for key, value := range m.Results.Results[row] {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", key, value))
+		keys := make([]string, 0, len(m.Results.Results[row]))
+		for key := range m.Results.Results[row] {
+			keys = append(keys, key)
+		}
+
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			builder.WriteString(fmt.Sprintf("%s: %v\n", key, m.Results.Results[row][key]))
 		}
 	}
 

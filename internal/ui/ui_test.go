@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -54,11 +55,15 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 
 func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryResult {
 	rows := []map[string]interface{}{
-		{"id": userID},
+		{
+			"id":         userID,
+			"created_at": "2025-09-21T15:41:22",
+		},
 	}
 	if len(userIDs) > 0 {
 		rows = append(rows, map[string]interface{}{
-			"id": userIDs[0],
+			"id":         userIDs[0],
+			"created_at": "2025-09-21T15:41:22",
 		})
 	}
 
@@ -262,7 +267,12 @@ func TestView(t *testing.T) {
 		})
 
 		view := updatedModel.View()
-		if !strings.Contains(view, "id: 666") {
+
+		matched, _ := regexp.MatchString(
+			`---\s+\ncreated_at: 2025-09-21T15:41:22\s+\nid: 666`,
+			view,
+		)
+		if !matched {
 			t.Fatalf("expected results to be visible, got \n %s", view)
 		}
 	})
