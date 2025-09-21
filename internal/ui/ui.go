@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/history"
 )
@@ -23,6 +25,8 @@ type Model struct {
 	Err       error
 	DB        *db.DB
 	History   history.Model
+	viewport  viewport.Model
+	ready     bool
 }
 
 type DBMsg struct {
@@ -35,7 +39,7 @@ type QueryMsg struct {
 }
 
 func Run() {
-	p := tea.NewProgram(InitialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	_, err := p.Run()
 	if err != nil {
@@ -112,6 +116,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		headerHeight := lipgloss.Height(m.TextInput.View())
+		footerHeight := lipgloss.Height("after")
+		verticalMarginHeight := headerHeight + footerHeight
+
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+			m.viewport.YPosition = headerHeight
+			m.ready = true
+		} else {
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height - verticalMarginHeight
+		}
 
 	case QueryMsg:
 		var cmd tea.Cmd
@@ -121,6 +143,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
+			m.viewport.SetContent(m.resultsView())
 		}
 
 		return m, cmd
@@ -134,6 +157,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	}
+
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -149,7 +175,7 @@ func (m Model) View() string {
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s", m.TextInput.View(), m.resultsView())
+	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.viewport.View(), "after viewport")
 }
 
 func (m Model) durationView() string {
