@@ -24,7 +24,6 @@ type ResultsPaneModel struct {
 }
 
 func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
-	//nolint:gocritic
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
@@ -44,6 +43,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 
 func (model ResultsPaneModel) Resize(width int, height int, yposition int) ResultsPaneModel {
 	footerHeight := lipgloss.Height(model.footerView())
+
 	height = height - footerHeight - yposition
 	if !model.ready {
 		model.viewport = model.New(width, height)
@@ -92,8 +92,9 @@ func (model ResultsPaneModel) View() string {
 
 func (model ResultsPaneModel) resultsView() string {
 	if model.Err != nil {
-		return fmt.Sprintf("%s", model.Err.Error())
+		return model.Err.Error()
 	}
+
 	var builder strings.Builder
 
 	for row := range model.Results.Results {

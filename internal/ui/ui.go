@@ -49,9 +49,14 @@ func InitialModel() Model {
 
 	return Model{
 		DB:        nil,
+		Err:       nil,
 		Query:     "",
 		TextInput: input,
 		History:   history.Init("/tmp/.dbqhistory"),
+		Results: db.DBQueryResult{
+			Duration: 0,
+			Results:  db.QueryResult{},
+		},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
 	}
