@@ -1,17 +1,15 @@
 package ui
 
-// A simple program demonstrating the text input component from the Bubbles
-// component library.
-
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/history"
 )
@@ -23,6 +21,7 @@ type Model struct {
 	Err       error
 	DB        *db.DB
 	History   history.Model
+	Viewport  ViewportModel
 }
 
 type DBMsg struct {
@@ -35,7 +34,7 @@ type QueryMsg struct {
 }
 
 func Run() {
-	p := tea.NewProgram(InitialModel())
+	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	_, err := p.Run()
 	if err != nil {
@@ -60,6 +59,8 @@ func InitialModel() Model {
 		},
 		TextInput: input,
 		History:   history.Init("/tmp/.dbqhistory"),
+		//nolint:exhaustruct
+		Viewport: ViewportModel{},
 	}
 }
 
@@ -98,6 +99,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 	m.History, cmd = m.History.Update(msg)
 	cmds = append(cmds, cmd)
+	m.Viewport, cmd = m.Viewport.Update(msg)
+	cmds = append(cmds, cmd)
 
 	//nolint:exhaustive
 	switch msg := msg.(type) {
@@ -112,6 +115,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		headerHeight := lipgloss.Height(m.TextInput.View())
+		footerHeight := lipgloss.Height("after")
+		verticalMarginHeight := headerHeight + footerHeight
+		m.Viewport = m.Viewport.Resize(msg.Width, msg.Height-verticalMarginHeight, headerHeight)
 
 	case QueryMsg:
 		var cmd tea.Cmd
@@ -121,6 +129,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
+			m.Viewport = m.Viewport.SetContent(m.resultsView())
 		}
 
 		return m, cmd
@@ -142,18 +151,22 @@ func (m Model) View() string {
 	if m.Err != nil {
 		return fmt.Sprintf(
 			"%s\n%s\n%s\n%s",
-			m.promptView(),
+			m.TextInput.View(),
 			m.Query,
 			m.durationView(),
 			m.Err.Error(),
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s", m.promptView(), m.resultsView())
+	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.Viewport.View(), m.footerView())
 }
 
-func (m Model) promptView() string {
-	return m.TextInput.View() + "\n"
+func (m Model) footerView() string {
+	style := lipgloss.NewStyle().
+		Width(m.Viewport.Width).
+		Background(lipgloss.Color("#ebebeb"))
+
+	return style.Render(m.durationView())
 }
 
 func (m Model) durationView() string {
@@ -161,20 +174,25 @@ func (m Model) durationView() string {
 		return ""
 	}
 
-	return fmt.Sprintf("%.3fs\n", m.Results.Duration.Seconds())
+	numStr := "1 row"
+
+	numResults := len(m.Results.Results)
+	if numResults != 1 {
+		numStr = fmt.Sprintf("%d rows", numResults)
+	}
+
+	return fmt.Sprintf("(%s in %.3fs)", numStr, m.Results.Duration.Seconds())
 }
 
 func (m Model) resultsView() string {
-	jsonStr := ""
+	var builder strings.Builder
+	for row := range m.Results.Results {
+		builder.WriteString("---\n")
 
-	if len(m.Results.Results) > 0 {
-		jsonData, err := json.MarshalIndent(m.Results.Results, "", "  ")
-		if err != nil {
-			log.Fatal(err)
+		for key, value := range m.Results.Results[row] {
+			builder.WriteString(fmt.Sprintf("%s: %v\n", key, value))
 		}
-
-		jsonStr = string(jsonData)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.Query, m.durationView(), jsonStr)
+	return builder.String()
 }
