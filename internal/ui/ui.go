@@ -59,6 +59,8 @@ func InitialModel() Model {
 		},
 		TextInput: input,
 		History:   history.Init("/tmp/.dbqhistory"),
+		//nolint:exhaustruct
+		Viewport: ViewportModel{},
 	}
 }
 
@@ -163,6 +165,7 @@ func (m Model) footerView() string {
 	style := lipgloss.NewStyle().
 		Width(m.Viewport.Width).
 		Background(lipgloss.Color("#ebebeb"))
+
 	return style.Render(m.durationView())
 }
 
@@ -182,14 +185,14 @@ func (m Model) durationView() string {
 }
 
 func (m Model) resultsView() string {
-	style := lipgloss.NewStyle().Border(lipgloss.Border{})
 	var builder strings.Builder
 	for row := range m.Results.Results {
 		builder.WriteString("---\n")
+
 		for key, value := range m.Results.Results[row] {
 			builder.WriteString(fmt.Sprintf("%s: %v\n", key, value))
 		}
 	}
 
-	return style.Render(builder.String())
+	return builder.String()
 }

@@ -15,6 +15,7 @@ type ViewportModel struct {
 }
 
 func (model ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
+	//nolint:exhaustive,gocritic
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -22,8 +23,10 @@ func (model ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
 			return model, nil
 		}
 	}
+
 	m, cmd := model.viewport.Update(msg)
 	model.viewport = m
+
 	return model, cmd
 }
 
@@ -36,6 +39,7 @@ func (model ViewportModel) Resize(width int, height int, yposition int) Viewport
 		model.viewport.Width = width
 		model.viewport.Height = height
 	}
+
 	return model
 }
 
@@ -45,6 +49,7 @@ func (model ViewportModel) New(width int, height int) viewport.Model {
 
 func (model ViewportModel) SetContent(content string) ViewportModel {
 	model.viewport.SetContent(content)
+
 	return model
 }
 
