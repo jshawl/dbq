@@ -1,8 +1,5 @@
 package ui
 
-// A simple program demonstrating the text input component from the Bubbles
-// component library.
-
 import (
 	"context"
 	"fmt"
@@ -11,7 +8,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
@@ -25,8 +21,7 @@ type Model struct {
 	Err       error
 	DB        *db.DB
 	History   history.Model
-	Viewport  viewport.Model
-	ready     bool
+	Viewport  ViewportModel
 }
 
 type DBMsg struct {
@@ -122,15 +117,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		headerHeight := lipgloss.Height(m.TextInput.View())
 		footerHeight := lipgloss.Height("after")
 		verticalMarginHeight := headerHeight + footerHeight
-
-		if !m.ready {
-			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
-			m.Viewport.YPosition = headerHeight
-			m.ready = true
-		} else {
-			m.Viewport.Width = msg.Width
-			m.Viewport.Height = msg.Height - verticalMarginHeight
-		}
+		m.Viewport = m.Viewport.Resize(msg.Width, msg.Height-verticalMarginHeight, headerHeight)
 
 	case QueryMsg:
 		var cmd tea.Cmd
@@ -140,7 +127,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
-			m.Viewport.SetContent(m.resultsView())
+			m.Viewport = m.Viewport.SetContent(m.resultsView())
 		}
 
 		return m, cmd
