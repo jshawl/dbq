@@ -110,6 +110,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Query = m.TextInput.Value()
 
 			return m, query(m.Query, m.DB)
+		case tea.KeyTab:
+			return m.cycleFocus(), nil
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.History.Cleanup()
 
@@ -159,6 +161,19 @@ func (m Model) View() string {
 	}
 
 	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.Viewport.View(), m.footerView())
+}
+
+func (m Model) cycleFocus() Model {
+	// TODO focus indicator
+	if m.TextInput.Focused() {
+		m.TextInput.Blur()
+		m.Viewport = m.Viewport.Focus()
+	} else {
+		m.TextInput.Focus()
+		m.Viewport = m.Viewport.Blur()
+	}
+
+	return m
 }
 
 func (m Model) footerView() string {
