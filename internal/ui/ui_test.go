@@ -268,7 +268,10 @@ func TestView(t *testing.T) {
 
 		view := updatedModel.View()
 
-		matched, _ := regexp.MatchString(`---\s+\ncreated_at: 2025-09-21T15:41:22\s+\nid: 666`, view)
+		matched, _ := regexp.MatchString(
+			`---\s+\ncreated_at: 2025-09-21T15:41:22\s+\nid: 666`,
+			view,
+		)
 		if !matched {
 			t.Fatalf("expected results to be visible, got \n %s", view)
 		}
