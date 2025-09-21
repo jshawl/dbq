@@ -31,23 +31,25 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 
 	model := ui.InitialModel()
 	model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
+
 	cmd := model.Init()
 	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
+	model = assertModelType[ui.Model](t, model)
 	updatedModel, _ := model.Update(msg)
+	model = assertModelType[ui.Model](t, updatedModel)
 
-	typedModel, ok := updatedModel.(ui.Model)
-	if !ok {
-		t.Fatal("expected updated model of type Model")
-	}
+	windowSizeMsg := tea.WindowSizeMsg{Width: 80, Height: 20}
+	updatedModel, _ = model.Update(windowSizeMsg)
+	model = assertModelType[ui.Model](t, updatedModel)
 
 	t.Cleanup(func() {
-		err := typedModel.DB.Close(t.Context())
+		err := model.DB.Close(t.Context())
 		if err != nil {
 			t.Errorf("cleanup failed: %v", err)
 		}
 	})
 
-	return typedModel
+	return model
 }
 
 func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryResult {
@@ -187,7 +189,7 @@ func TestView(t *testing.T) {
 
 		view := model.View()
 		if !strings.Contains(view, "(2 rows in 2.345s)") {
-			t.Fatalf("expected model error to be visible\n %s", view)
+			t.Fatalf("expected duration to be visible\n %s", view)
 		}
 	})
 
@@ -207,10 +209,13 @@ func TestView(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		model.Results = makeResults(0, 123)
+		updatedModel, _ := model.Update(ui.QueryMsg{
+			Err:     nil,
+			Results: makeResults(0, 666),
+		})
 
-		view := model.View()
-		if !strings.Contains(view, "\"id\": 123") {
+		view := updatedModel.View()
+		if !strings.Contains(view, "id: 666") {
 			t.Fatalf("expected results to be visible, got \n %s", view)
 		}
 	})

@@ -5,9 +5,9 @@ package ui
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -25,7 +25,7 @@ type Model struct {
 	Err       error
 	DB        *db.DB
 	History   history.Model
-	viewport  viewport.Model
+	Viewport  viewport.Model
 	ready     bool
 }
 
@@ -102,6 +102,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 	m.History, cmd = m.History.Update(msg)
 	cmds = append(cmds, cmd)
+	m.Viewport, cmd = m.Viewport.Update(msg)
+	cmds = append(cmds, cmd)
 
 	//nolint:exhaustive
 	switch msg := msg.(type) {
@@ -122,17 +124,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		verticalMarginHeight := headerHeight + footerHeight
 
 		if !m.ready {
-			// Since this program is using the full size of the viewport we
-			// need to wait until we've received the window dimensions before
-			// we can initialize the viewport. The initial dimensions come in
-			// quickly, though asynchronously, which is why we wait for them
-			// here.
-			m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
-			m.viewport.YPosition = headerHeight
+			m.Viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+			m.Viewport.YPosition = headerHeight
 			m.ready = true
 		} else {
-			m.viewport.Width = msg.Width
-			m.viewport.Height = msg.Height - verticalMarginHeight
+			m.Viewport.Width = msg.Width
+			m.Viewport.Height = msg.Height - verticalMarginHeight
 		}
 
 	case QueryMsg:
@@ -143,7 +140,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
-			m.viewport.SetContent(m.resultsView())
+			m.Viewport.SetContent(m.resultsView())
 		}
 
 		return m, cmd
@@ -157,9 +154,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	}
-
-	m.viewport, cmd = m.viewport.Update(msg)
-	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -175,7 +169,14 @@ func (m Model) View() string {
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.viewport.View(), "after viewport")
+	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.Viewport.View(), m.footerView())
+}
+
+func (m Model) footerView() string {
+	style := lipgloss.NewStyle().
+		Width(m.Viewport.Width).
+		Background(lipgloss.Color("#ebebeb"))
+	return style.Render(m.durationView())
 }
 
 func (m Model) durationView() string {
@@ -190,20 +191,18 @@ func (m Model) durationView() string {
 		numStr = fmt.Sprintf("%d rows", numResults)
 	}
 
-	return fmt.Sprintf("(%s in %.3fs)\n", numStr, m.Results.Duration.Seconds())
+	return fmt.Sprintf("(%s in %.3fs)", numStr, m.Results.Duration.Seconds())
 }
 
 func (m Model) resultsView() string {
-	jsonStr := ""
-
-	if len(m.Results.Results) > 0 {
-		jsonData, err := json.MarshalIndent(m.Results.Results, "", "  ")
-		if err != nil {
-			log.Fatal(err)
+	style := lipgloss.NewStyle().Border(lipgloss.Border{})
+	var builder strings.Builder
+	for row := range m.Results.Results {
+		builder.WriteString("---\n")
+		for key, value := range m.Results.Results[row] {
+			builder.WriteString(fmt.Sprintf("%s: %v\n", key, value))
 		}
-
-		jsonStr = string(jsonData)
 	}
 
-	return fmt.Sprintf("%s\n%s", m.durationView(), jsonStr)
+	return style.Render(builder.String())
 }
