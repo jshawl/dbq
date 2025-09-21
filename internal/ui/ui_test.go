@@ -171,7 +171,7 @@ func TestUpdate(t *testing.T) {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
 		}
 
-		if !typedModel.Viewport.Focused() {
+		if !typedModel.ResultsPane.Focused() {
 			t.Fatal("expected requery results to focus on viewport")
 		}
 	})
@@ -190,7 +190,7 @@ func TestUpdate(t *testing.T) {
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
 
-		if typedModel.Viewport.Focused() {
+		if typedModel.ResultsPane.Focused() {
 			t.Fatal("expected requery results not to focus on viewport")
 		}
 	})
