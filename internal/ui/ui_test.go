@@ -90,6 +90,7 @@ func TestInit(t *testing.T) {
 	}
 }
 
+//nolint:cyclop
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -112,6 +113,29 @@ func TestUpdate(t *testing.T) {
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyCtrlC))
 
 		testutil.AssertMsgType[tea.QuitMsg](t, cmd)
+	})
+
+	t.Run("keys - tab", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		if !model.TextInput.Focused() {
+			t.Fatal("expected text input to be focused")
+		}
+
+		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyTab))
+		model = assertModelType[ui.Model](t, updatedModel)
+
+		if model.TextInput.Focused() {
+			t.Fatal("expected text input not to be focused")
+		}
+
+		updatedModel, _ = model.Update(testutil.MakeKeyMsg(tea.KeyTab))
+		model = assertModelType[ui.Model](t, updatedModel)
+
+		if !model.TextInput.Focused() {
+			t.Fatal("expected text input to be focused")
+		}
 	})
 
 	t.Run("keys - other", func(t *testing.T) {
@@ -140,6 +164,29 @@ func TestUpdate(t *testing.T) {
 		got := typedModel.Results.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
+		}
+
+		if !typedModel.Viewport.Focused() {
+			t.Fatal("expected requery results to focus on viewport")
+		}
+	})
+
+	t.Run("QueryMsg - err", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		updatedModel, _ := model.Update(ui.QueryMsg{
+			Err: errSQL,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
+		})
+
+		typedModel := assertModelType[ui.Model](t, updatedModel)
+
+		if typedModel.Viewport.Focused() {
+			t.Fatal("expected requery results not to focus on viewport")
 		}
 	})
 

@@ -110,6 +110,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Query = m.TextInput.Value()
 
 			return m, query(m.Query, m.DB)
+		case tea.KeyTab:
+			return m.cycleFocus(), nil
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.History.Cleanup()
 
@@ -129,6 +131,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
+			m.TextInput.Blur()
+			m.Viewport = m.Viewport.Focus()
 			m.Viewport = m.Viewport.SetContent(m.resultsView())
 		}
 
@@ -158,7 +162,34 @@ func (m Model) View() string {
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.Viewport.View(), m.footerView())
+	return fmt.Sprintf(
+		"%s\n%s\n%s",
+		withFocusView(m.TextInput.View(), m.TextInput.Focused()),
+		withFocusView(m.Viewport.View(), m.Viewport.Focused()),
+		m.footerView(),
+	)
+}
+
+func (m Model) cycleFocus() Model {
+	if m.TextInput.Focused() {
+		m.TextInput.Blur()
+		m.Viewport = m.Viewport.Focus()
+	} else {
+		m.TextInput.Focus()
+		m.Viewport = m.Viewport.Blur()
+	}
+
+	return m
+}
+
+func withFocusView(view string, focused bool) string {
+	if !focused {
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("#bbb"))
+
+		return style.Render(view)
+	}
+
+	return view
 }
 
 func (m Model) footerView() string {
