@@ -1,7 +1,7 @@
 .PHONY: build lint run test
 
 build:
-	go build -o /dev/null -a .
+	go build -o /dev/null .
 
 lint:
 	golangci-lint run

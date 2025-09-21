@@ -17,14 +17,18 @@ jobs:
       - name: Start services
         run: docker compose up -d
 
-      - name: Wait for services
-        run: |
-          timeout 60s bash -c 'until docker compose exec -T postgres pg_isready -h localhost; do sleep 1; done'
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.24"
+
+      - name: Cache Go build artifacts
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-
 
       - name: Build
         run: make build
@@ -33,6 +37,10 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.4.0
+
+      - name: Wait for services
+        run: |
+          timeout 60s bash -c 'until docker compose exec -T postgres pg_isready -h localhost; do sleep 1; done'
 
       - name: Test
         run: make test
