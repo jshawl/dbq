@@ -131,6 +131,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
+			m.TextInput.Blur()
+			m.Viewport = m.Viewport.Focus()
 			m.Viewport = m.Viewport.SetContent(m.resultsView())
 		}
 
@@ -160,11 +162,15 @@ func (m Model) View() string {
 		)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s", m.TextInput.View(), m.Viewport.View(), m.footerView())
+	return fmt.Sprintf(
+		"%s\n%s\n%s",
+		withFocusView(m.TextInput.View(), m.TextInput.Focused()),
+		withFocusView(m.Viewport.View(), m.Viewport.Focused()),
+		m.footerView(),
+	)
 }
 
 func (m Model) cycleFocus() Model {
-	// TODO focus indicator
 	if m.TextInput.Focused() {
 		m.TextInput.Blur()
 		m.Viewport = m.Viewport.Focus()
@@ -174,6 +180,16 @@ func (m Model) cycleFocus() Model {
 	}
 
 	return m
+}
+
+func withFocusView(view string, focused bool) string {
+	if !focused {
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("#bbb"))
+
+		return style.Render(view)
+	}
+
+	return view
 }
 
 func (m Model) footerView() string {

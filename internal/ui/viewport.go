@@ -40,6 +40,9 @@ func (model ViewportModel) Resize(width int, height int, yposition int) Viewport
 		model.viewport.Height = height
 	}
 
+	model.Width = model.viewport.Width
+	model.Height = model.viewport.Height
+
 	return model
 }
 
@@ -47,6 +50,10 @@ func (model ViewportModel) Focus() ViewportModel {
 	model.focused = true
 
 	return model
+}
+
+func (model ViewportModel) Focused() bool {
+	return model.focused
 }
 
 func (model ViewportModel) Blur() ViewportModel {
