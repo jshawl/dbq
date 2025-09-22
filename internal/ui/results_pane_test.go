@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 	"testing"
@@ -17,7 +18,16 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		userID := 789
-		model := ui.ResultsPaneModel{}
+		model := ui.ResultsPaneModel{
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
+			Err:       nil,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
+		}
 		updatedModel, _ := model.Update(ui.QueryMsg{
 			Err:     nil,
 			Results: makeResults(0, userID),
@@ -34,15 +44,27 @@ func TestResultsPane_Update(t *testing.T) {
 	t.Run("QueryMsg - err", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{}
+		model := ui.ResultsPaneModel{
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
+			Err:       nil,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
+		}
 		updatedModel, _ := model.Update(ui.QueryMsg{
-			Err:     errSQL,
-			Results: db.DBQueryResult{},
+			Err: errSQL,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
 		})
 
 		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
 
-		if typedModel.Err != errSQL {
+		if !errors.Is(typedModel.Err, errSQL) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
@@ -55,7 +77,11 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Results: makeResults(time.Millisecond*2345, 123),
+			Err:       nil,
+			Results:   makeResults(time.Millisecond*2345, 123),
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
 		}
 
 		view := model.View()
@@ -68,7 +94,11 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Results: makeResults(time.Millisecond*2345, 123, 456),
+			Err:       nil,
+			Results:   makeResults(time.Millisecond*2345, 123, 456),
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
 		}
 
 		view := model.View()
@@ -85,8 +115,11 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Err:     nil,
-			Results: makeResults(0, 666),
+			Err:       nil,
+			Results:   makeResults(0, 666),
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
 		}
 
 		view := model.ResultsView()
@@ -104,8 +137,14 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Err:     errSQL,
-			Results: db.DBQueryResult{},
+			Err: errSQL,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
+			Height:    80,
+			Width:     80,
+			YPosition: 0,
 		}
 
 		view := model.ResultsView()

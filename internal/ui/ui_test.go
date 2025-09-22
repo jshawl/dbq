@@ -94,7 +94,6 @@ func TestInit(t *testing.T) {
 	}
 }
 
-//nolint:cyclop
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -216,6 +215,7 @@ func TestView(t *testing.T) {
 	t.Parallel()
 
 	model := setupDatabaseModel(t)
+
 	view := model.View()
 	if !strings.Contains(view, "> SELECT") {
 		t.Fatalf("expected view to contain a text input:\n%s", view)
