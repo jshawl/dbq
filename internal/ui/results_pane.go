@@ -38,6 +38,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+
 	model.viewport.SetContent(model.ResultsView())
 	model.viewport, cmd = model.viewport.Update(msg)
 

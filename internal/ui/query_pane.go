@@ -36,8 +36,10 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	model.History, cmd = model.History.Update(msg)
-	cmds = append(cmds, cmd)
+	if model.focused {
+		model.History, cmd = model.History.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 	model.TextInput, cmd = model.TextInput.Update(msg)
 	cmds = append(cmds, cmd)
 
