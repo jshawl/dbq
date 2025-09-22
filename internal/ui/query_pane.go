@@ -79,12 +79,14 @@ func (model QueryPaneModel) Focused() bool {
 
 func (model QueryPaneModel) Focus() QueryPaneModel {
 	model.focused = true
+	model.TextInput.Focus()
 
 	return model
 }
 
 func (model QueryPaneModel) Blur() QueryPaneModel {
 	model.focused = false
+	model.TextInput.Blur()
 
 	return model
 }

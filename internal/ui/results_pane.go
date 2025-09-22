@@ -32,18 +32,16 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 			return model, nil
 		}
 	case QueryMsg:
-		var cmd tea.Cmd
-
 		model.Duration = msg.Duration
 		model.Err = msg.Err
 		model.Results = msg.Results
-		model.viewport.SetContent(model.ResultsView())
-		model.viewport, cmd = model.viewport.Update(msg)
-
-		return model, cmd
 	}
 
-	return model, nil
+	var cmd tea.Cmd
+	model.viewport.SetContent(model.ResultsView())
+	model.viewport, cmd = model.viewport.Update(msg)
+
+	return model, cmd
 }
 
 func (model ResultsPaneModel) Resize(width int, height int, yposition int) ResultsPaneModel {
