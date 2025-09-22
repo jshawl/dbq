@@ -19,6 +19,7 @@ type DB struct {
 }
 
 type DBQueryResult struct {
+	Err      error
 	Results  QueryResult
 	Duration time.Duration
 }
@@ -32,18 +33,16 @@ func NewDB(inner Queryable) *DB {
 	return &DB{inner: inner}
 }
 
-func (db *DB) Query(ctx context.Context, query string) (DBQueryResult, error) {
+func (db *DB) Query(ctx context.Context, query string) DBQueryResult {
 	start := time.Now()
 
 	postgresQueryResults, err := db.inner.Query(ctx, query)
-	if err != nil {
-		return DBQueryResult{}, fmt.Errorf("%w: %w", ErrDBQuery, err)
-	}
 
 	return DBQueryResult{
+		Err:      err,
 		Results:  postgresQueryResults,
 		Duration: time.Since(start),
-	}, nil
+	}
 }
 
 func (db *DB) Close(ctx context.Context) error {

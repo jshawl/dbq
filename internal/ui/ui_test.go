@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	db "github.com/jshawl/dbq/internal/db"
@@ -52,7 +51,7 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 	return model
 }
 
-func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryResult {
+func makeResults(userID int, userIDs ...int) db.QueryResult {
 	rows := []map[string]interface{}{
 		{
 			"id":         userID,
@@ -66,10 +65,7 @@ func makeResults(duration time.Duration, userID int, userIDs ...int) db.DBQueryR
 		})
 	}
 
-	return db.DBQueryResult{
-		Duration: duration,
-		Results:  rows,
-	}
+	return rows
 }
 
 func TestInitialModel(t *testing.T) {
@@ -104,7 +100,7 @@ func TestUpdate(t *testing.T) {
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
 
 		queryMsg := testutil.AssertMsgType[ui.QueryMsg](t, cmd)
-		if len(queryMsg.Results.Results) == 0 {
+		if len(queryMsg.Results) == 0 {
 			t.Fatal("expected results")
 		}
 	})
@@ -158,8 +154,9 @@ func TestUpdate(t *testing.T) {
 		userID := 789
 		model := setupDatabaseModel(t)
 		updatedModel, _ := model.Update(ui.QueryMsg{
-			Err:     nil,
-			Results: makeResults(0, userID),
+			Duration: 0,
+			Err:      nil,
+			Results:  makeResults(0, userID),
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
@@ -174,11 +171,9 @@ func TestUpdate(t *testing.T) {
 
 		model := setupDatabaseModel(t)
 		updatedModel, _ := model.Update(ui.QueryMsg{
-			Err: errSQL,
-			Results: db.DBQueryResult{
-				Results:  db.QueryResult{},
-				Duration: 0,
-			},
+			Duration: 0,
+			Err:      errSQL,
+			Results:  db.QueryResult{},
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
