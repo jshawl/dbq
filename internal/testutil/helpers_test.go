@@ -25,3 +25,13 @@ func TestAssertMsgType(t *testing.T) {
 		t.Fatal("expected msg.ok to be true")
 	}
 }
+
+func TestMakeKeyMsg(t *testing.T) {
+	t.Parallel()
+
+	msg := testutil.MakeKeyMsg(tea.KeyBackspace)
+
+	if msg.Type != tea.KeyBackspace {
+		t.Fatal("expected tea.Key")
+	}
+}

@@ -25,10 +25,6 @@ type ResultsPaneModel struct {
 	focused  bool
 }
 
-func (model ResultsPaneModel) Init() tea.Cmd {
-	return nil
-}
-
 func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -39,7 +35,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model.Duration = msg.Duration
 		model.Err = msg.Err
 		model.Results = msg.Results
-		model.viewport.SetContent(model.ResultsView())
+		model.SetContent(model.ResultsView())
 	}
 
 	m, cmd := model.viewport.Update(msg)

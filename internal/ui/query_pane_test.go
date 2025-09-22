@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jshawl/dbq/internal/history"
 	"github.com/jshawl/dbq/internal/testutil"
 	"github.com/jshawl/dbq/internal/ui"
 )
@@ -25,6 +26,17 @@ func TestQueryPane_Update(t *testing.T) {
 
 		if queryMsg.Value != want {
 			t.Fatalf("expected QueryMsg.Value to be set, got %s", queryMsg.Value)
+		}
+	})
+	t.Run("history.TraveledMsg", func(t *testing.T) {
+		t.Parallel()
+
+		//nolint:exhaustruct
+		model := ui.QueryPaneModel{}.New()
+		_, cmd := model.Update(history.TraveledMsg{})
+
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
 		}
 	})
 }

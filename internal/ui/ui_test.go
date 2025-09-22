@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	db "github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/history"
 	"github.com/jshawl/dbq/internal/testutil"
 	ui "github.com/jshawl/dbq/internal/ui"
 )
@@ -159,17 +158,6 @@ func TestUpdate(t *testing.T) {
 
 		if typedModel.ResultsPane.Focused() {
 			t.Fatal("expected requery results not to focus on viewport")
-		}
-	})
-
-	t.Run("history.TraveledMsg", func(t *testing.T) {
-		t.Parallel()
-
-		model := setupDatabaseModel(t)
-		_, cmd := model.Update(history.TraveledMsg{})
-
-		if cmd != nil {
-			t.Fatal("expected cmd to be nil")
 		}
 	})
 
