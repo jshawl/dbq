@@ -29,7 +29,7 @@ func (model ResultsPaneModel) Init() tea.Cmd {
 	return nil
 }
 
-func (model ResultsPaneModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {

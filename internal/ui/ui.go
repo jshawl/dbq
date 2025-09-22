@@ -89,17 +89,15 @@ func query(q string, db *db.DB) tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
-		cmd         tea.Cmd
-		cmds        []tea.Cmd
-		resultsPane tea.Model
+		cmd  tea.Cmd
+		cmds []tea.Cmd
 	)
 
 	m.TextInput, cmd = m.TextInput.Update(msg)
 	cmds = append(cmds, cmd)
 	m.History, cmd = m.History.Update(msg)
 	cmds = append(cmds, cmd)
-	resultsPane, cmd = m.ResultsPane.Update(msg)
-	m.ResultsPane = resultsPane.(ResultsPaneModel)
+	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
 
 	cmds = append(cmds, cmd)
 

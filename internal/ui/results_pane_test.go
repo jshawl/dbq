@@ -32,9 +32,7 @@ func TestResultsPane_Update(t *testing.T) {
 			Results:  makeResults(userID),
 		})
 
-		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
-
-		got := typedModel.Results[0]["id"]
+		got := updatedModel.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
 		}
@@ -57,9 +55,7 @@ func TestResultsPane_Update(t *testing.T) {
 			Results:  db.QueryResult{},
 		})
 
-		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
-
-		if !errors.Is(typedModel.Err, errSQL) {
+		if !errors.Is(updatedModel.Err, errSQL) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
