@@ -26,6 +26,7 @@ func (model QueryPaneModel) New() QueryPaneModel {
 	model.TextInput = input
 	model.History = history.Init("/tmp/.dbqhistory")
 	model.focused = true
+
 	return model
 }
 
@@ -44,6 +45,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 	model.TextInput, cmd = model.TextInput.Update(msg)
 	cmds = append(cmds, cmd)
 
+	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -64,6 +66,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 	case QueryMsg:
 		if msg.Err == nil {
 			model.History, cmd = model.History.Update(history.PushMsg{Entry: msg.Query})
+			cmds = append(cmds, cmd)
 		}
 	}
 
@@ -76,11 +79,13 @@ func (model QueryPaneModel) Focused() bool {
 
 func (model QueryPaneModel) Focus() QueryPaneModel {
 	model.focused = true
+
 	return model
 }
 
 func (model QueryPaneModel) Blur() QueryPaneModel {
 	model.focused = false
+
 	return model
 }
 

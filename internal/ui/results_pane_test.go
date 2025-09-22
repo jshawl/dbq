@@ -30,6 +30,7 @@ func TestResultsPane_Update(t *testing.T) {
 			Duration: 0,
 			Err:      nil,
 			Results:  makeResults(userID),
+			Query:    "select * from posts",
 		})
 
 		got := updatedModel.Results[0]["id"]
@@ -53,6 +54,7 @@ func TestResultsPane_Update(t *testing.T) {
 			Duration: 0,
 			Err:      errSQL,
 			Results:  db.QueryResult{},
+			Query:    "not sql",
 		})
 
 		if !errors.Is(updatedModel.Err, errSQL) {

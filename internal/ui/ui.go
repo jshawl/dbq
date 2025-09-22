@@ -40,14 +40,14 @@ func Run() {
 }
 
 func InitialModel() Model {
-
 	return Model{
 		DB:      nil,
 		Err:     nil,
 		Results: db.QueryResult{},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
-		QueryPane:   QueryPaneModel{}.New(),
+		//nolint:exhaustruct
+		QueryPane: QueryPaneModel{}.New(),
 	}
 }
 
@@ -63,17 +63,17 @@ func (m Model) Init() tea.Cmd {
 	}
 }
 
-func query(q string, db *db.DB) tea.Cmd {
+func query(sql string, db *db.DB) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		results := db.Query(ctx, q)
+		results := db.Query(ctx, sql)
 
 		return QueryMsg{
 			Err:      results.Err,
 			Results:  results.Results,
 			Duration: results.Duration,
-			Query:    q,
+			Query:    sql,
 		}
 	}
 }

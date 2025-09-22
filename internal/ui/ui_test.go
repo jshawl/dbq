@@ -134,6 +134,7 @@ func TestUpdate(t *testing.T) {
 			Duration: 0,
 			Err:      nil,
 			Results:  makeResults(0, userID),
+			Query:    "select * from users where userID = 789",
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
@@ -151,6 +152,7 @@ func TestUpdate(t *testing.T) {
 			Duration: 0,
 			Err:      errSQL,
 			Results:  db.QueryResult{},
+			Query:    "not sql",
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)

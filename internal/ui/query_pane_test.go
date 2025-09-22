@@ -15,6 +15,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("keys - enter", func(t *testing.T) {
 		t.Parallel()
 
+		//nolint:exhaustruct
 		model := ui.QueryPaneModel{}.New()
 		want := "select * from posts limit 1;"
 		model.TextInput.SetValue(want)
@@ -26,11 +27,14 @@ func TestQueryPane_Update(t *testing.T) {
 			t.Fatalf("expected QueryMsg.Value to be set, got %s", queryMsg.Value)
 		}
 	})
-
 }
 
 func TestQueryPane_View(t *testing.T) {
+	t.Parallel()
+
+	//nolint:exhaustruct
 	model := ui.QueryPaneModel{}.New()
+
 	view := model.View()
 	if !strings.Contains(view, "> SELECT") {
 		t.Fatalf("expected view to have placeholder, got %s", view)
