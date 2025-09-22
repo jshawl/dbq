@@ -14,10 +14,10 @@ type QueryPaneModel struct {
 }
 
 type QueryExecMsg struct {
-	value string
+	Value string
 }
 
-func (model QueryPaneModel) Init() QueryPaneModel {
+func (model QueryPaneModel) New() QueryPaneModel {
 	input := textinput.New()
 	input.Placeholder = "SELECT * FROM users LIMIT 1;"
 	input.Focus()
@@ -50,7 +50,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		case tea.KeyEnter:
 			return model, func() tea.Msg {
 				return QueryExecMsg{
-					value: model.TextInput.Value(),
+					Value: model.TextInput.Value(),
 				}
 			}
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -63,8 +63,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		return model, nil
 	case QueryMsg:
 		if msg.Err == nil {
-			// TODO textinput.value should be msg value
-			model.History, cmd = model.History.Update(history.PushMsg{Entry: model.TextInput.Value()})
+			model.History, cmd = model.History.Update(history.PushMsg{Entry: msg.Query})
 		}
 	}
 

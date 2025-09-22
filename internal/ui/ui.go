@@ -12,7 +12,6 @@ import (
 )
 
 type Model struct {
-	Query       string
 	Results     db.QueryResult
 	Err         error
 	DB          *db.DB
@@ -28,6 +27,7 @@ type QueryMsg struct {
 	Duration time.Duration
 	Err      error
 	Results  db.QueryResult
+	Query    string
 }
 
 func Run() {
@@ -44,11 +44,10 @@ func InitialModel() Model {
 	return Model{
 		DB:      nil,
 		Err:     nil,
-		Query:   "",
 		Results: db.QueryResult{},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
-		QueryPane:   QueryPaneModel{}.Init(),
+		QueryPane:   QueryPaneModel{}.New(),
 	}
 }
 
@@ -74,6 +73,7 @@ func query(q string, db *db.DB) tea.Cmd {
 			Err:      results.Err,
 			Results:  results.Results,
 			Duration: results.Duration,
+			Query:    q,
 		}
 	}
 }
@@ -100,9 +100,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.QueryPane.View()))
-
 	case QueryExecMsg:
-		return m, query(msg.value, m.DB)
+		return m, query(msg.Value, m.DB)
 	case QueryMsg:
 		var cmd tea.Cmd
 
