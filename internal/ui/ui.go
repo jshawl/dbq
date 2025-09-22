@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
-	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,13 +13,13 @@ import (
 )
 
 type Model struct {
-	TextInput textinput.Model
-	Query     string
-	Results   db.DBQueryResult
-	Err       error
-	DB        *db.DB
-	History   history.Model
-	Viewport  ViewportModel
+	TextInput   textinput.Model
+	Query       string
+	Results     db.DBQueryResult
+	Err         error
+	DB          *db.DB
+	History     history.Model
+	ResultsPane ResultsPaneModel
 }
 
 type DBMsg struct {
@@ -51,17 +48,17 @@ func InitialModel() Model {
 	input.Width = 80
 
 	return Model{
-		DB:    nil,
-		Err:   nil,
-		Query: "",
-		Results: db.DBQueryResult{
-			Results:  db.QueryResult{},
-			Duration: time.Duration(0),
-		},
+		DB:        nil,
+		Err:       nil,
+		Query:     "",
 		TextInput: input,
 		History:   history.Init("/tmp/.dbqhistory"),
+		Results: db.DBQueryResult{
+			Duration: 0,
+			Results:  db.QueryResult{},
+		},
 		//nolint:exhaustruct
-		Viewport: ViewportModel{},
+		ResultsPane: ResultsPaneModel{},
 	}
 }
 
@@ -92,15 +89,18 @@ func query(q string, db *db.DB) tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
+		cmd         tea.Cmd
+		cmds        []tea.Cmd
+		resultsPane tea.Model
 	)
 
 	m.TextInput, cmd = m.TextInput.Update(msg)
 	cmds = append(cmds, cmd)
 	m.History, cmd = m.History.Update(msg)
 	cmds = append(cmds, cmd)
-	m.Viewport, cmd = m.Viewport.Update(msg)
+	resultsPane, cmd = m.ResultsPane.Update(msg)
+	m.ResultsPane = resultsPane.(ResultsPaneModel)
+
 	cmds = append(cmds, cmd)
 
 	//nolint:exhaustive
@@ -119,22 +119,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		headerHeight := lipgloss.Height(m.TextInput.View())
-		footerHeight := lipgloss.Height("after")
-		verticalMarginHeight := headerHeight + footerHeight
-		m.Viewport = m.Viewport.Resize(msg.Width, msg.Height-verticalMarginHeight, headerHeight)
+		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.TextInput.View()))
 
 	case QueryMsg:
 		var cmd tea.Cmd
 
-		m.Results = msg.Results
-		m.Err = msg.Err
-
 		if msg.Err == nil {
 			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
 			m.TextInput.Blur()
-			m.Viewport = m.Viewport.Focus()
-			m.Viewport = m.Viewport.SetContent(m.resultsView())
+			m.ResultsPane = m.ResultsPane.Focus()
 		}
 
 		return m, cmd
@@ -155,29 +148,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	if m.Err != nil {
 		return fmt.Sprintf(
-			"%s\n%s\n%s\n%s",
+			"%s\n%s\n%s",
 			m.TextInput.View(),
 			m.Query,
-			m.durationView(),
 			m.Err.Error(),
 		)
 	}
 
 	return fmt.Sprintf(
-		"%s\n%s\n%s",
+		"%s\n%s",
 		withFocusView(m.TextInput.View(), m.TextInput.Focused()),
-		withFocusView(m.Viewport.View(), m.Viewport.Focused()),
-		m.footerView(),
+		withFocusView(m.ResultsPane.View(), m.ResultsPane.Focused()),
 	)
 }
 
 func (m Model) cycleFocus() Model {
 	if m.TextInput.Focused() {
 		m.TextInput.Blur()
-		m.Viewport = m.Viewport.Focus()
+		m.ResultsPane = m.ResultsPane.Focus()
 	} else {
 		m.TextInput.Focus()
-		m.Viewport = m.Viewport.Blur()
+		m.ResultsPane = m.ResultsPane.Blur()
 	}
 
 	return m
@@ -191,48 +182,4 @@ func withFocusView(view string, focused bool) string {
 	}
 
 	return view
-}
-
-func (m Model) footerView() string {
-	style := lipgloss.NewStyle().
-		Width(m.Viewport.Width).
-		Background(lipgloss.Color("#ebebeb"))
-
-	return style.Render(m.durationView())
-}
-
-func (m Model) durationView() string {
-	if m.Results.Duration.Seconds() == 0 {
-		return ""
-	}
-
-	numStr := "1 row"
-
-	numResults := len(m.Results.Results)
-	if numResults != 1 {
-		numStr = fmt.Sprintf("%d rows", numResults)
-	}
-
-	return fmt.Sprintf("(%s in %.3fs)", numStr, m.Results.Duration.Seconds())
-}
-
-func (m Model) resultsView() string {
-	var builder strings.Builder
-
-	for row := range m.Results.Results {
-		builder.WriteString("---\n")
-
-		keys := make([]string, 0, len(m.Results.Results[row]))
-		for key := range m.Results.Results[row] {
-			keys = append(keys, key)
-		}
-
-		sort.Strings(keys)
-
-		for _, key := range keys {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", key, m.Results.Results[row][key]))
-		}
-	}
-
-	return builder.String()
 }
