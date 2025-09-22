@@ -52,7 +52,7 @@ func TestDB_Query(t *testing.T) {
 		db := db.NewDB(mock)
 
 		ctx := context.Background()
-		got, _ := db.Query(ctx, "SELECT * FROM users")
+		got := db.Query(ctx, "SELECT * FROM users")
 
 		if !mock.queryCalled {
 			t.Error("expected Query to call inner PGDB.Query")
@@ -83,8 +83,8 @@ func TestDB_Query(t *testing.T) {
 		}
 		db := db.NewDB(mock)
 
-		_, err := db.Query(context.Background(), "bad sql")
-		if err == nil {
+		got := db.Query(context.Background(), "bad sql")
+		if got.Err == nil {
 			t.Fatal("expected an error, got nil")
 		}
 	})

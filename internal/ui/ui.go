@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +16,7 @@ import (
 type Model struct {
 	TextInput   textinput.Model
 	Query       string
-	Results     db.DBQueryResult
+	Results     db.QueryResult
 	Err         error
 	DB          *db.DB
 	History     history.Model
@@ -27,8 +28,9 @@ type DBMsg struct {
 }
 
 type QueryMsg struct {
-	Err     error
-	Results db.DBQueryResult
+	Duration time.Duration
+	Err      error
+	Results  db.QueryResult
 }
 
 func Run() {
@@ -53,10 +55,7 @@ func InitialModel() Model {
 		Query:     "",
 		TextInput: input,
 		History:   history.Init("/tmp/.dbqhistory"),
-		Results: db.DBQueryResult{
-			Duration: 0,
-			Results:  db.QueryResult{},
-		},
+		Results:   db.QueryResult{},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
 	}
@@ -78,11 +77,12 @@ func query(q string, db *db.DB) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		results, err := db.Query(ctx, q)
+		results := db.Query(ctx, q)
 
 		return QueryMsg{
-			Err:     err,
-			Results: results,
+			Err:      results.Err,
+			Results:  results.Results,
+			Duration: results.Duration,
 		}
 	}
 }

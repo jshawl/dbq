@@ -22,20 +22,19 @@ func TestResultsPane_Update(t *testing.T) {
 			Height:    80,
 			Width:     80,
 			YPosition: 0,
+			Duration:  0,
 			Err:       nil,
-			Results: db.DBQueryResult{
-				Results:  db.QueryResult{},
-				Duration: 0,
-			},
+			Results:   db.QueryResult{},
 		}
 		updatedModel, _ := model.Update(ui.QueryMsg{
-			Err:     nil,
-			Results: makeResults(0, userID),
+			Duration: 0,
+			Err:      nil,
+			Results:  makeResults(userID),
 		})
 
 		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
 
-		got := typedModel.Results.Results[0]["id"]
+		got := typedModel.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
 		}
@@ -48,18 +47,14 @@ func TestResultsPane_Update(t *testing.T) {
 			Height:    80,
 			Width:     80,
 			YPosition: 0,
+			Duration:  0,
 			Err:       nil,
-			Results: db.DBQueryResult{
-				Results:  db.QueryResult{},
-				Duration: 0,
-			},
+			Results:   db.QueryResult{},
 		}
 		updatedModel, _ := model.Update(ui.QueryMsg{
-			Err: errSQL,
-			Results: db.DBQueryResult{
-				Results:  db.QueryResult{},
-				Duration: 0,
-			},
+			Duration: 0,
+			Err:      errSQL,
+			Results:  db.QueryResult{},
 		})
 
 		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
@@ -77,8 +72,9 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
+			Duration:  time.Millisecond * 2345,
 			Err:       nil,
-			Results:   makeResults(time.Millisecond*2345, 123),
+			Results:   makeResults(123),
 			Height:    80,
 			Width:     80,
 			YPosition: 0,
@@ -86,7 +82,7 @@ func TestResultsPane_View(t *testing.T) {
 
 		view := model.View()
 		if !strings.Contains(view, "(1 row in 2.345s)") {
-			t.Fatalf("expected model error to be visible\n %s", view)
+			t.Fatalf("expected model duration to be visible\n %s", view)
 		}
 	})
 
@@ -94,8 +90,9 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
+			Duration:  time.Millisecond * 2345,
 			Err:       nil,
-			Results:   makeResults(time.Millisecond*2345, 123, 456),
+			Results:   makeResults(123, 456),
 			Height:    80,
 			Width:     80,
 			YPosition: 0,
@@ -115,6 +112,7 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
+			Duration:  0,
 			Err:       nil,
 			Results:   makeResults(0, 666),
 			Height:    80,
@@ -137,11 +135,9 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Err: errSQL,
-			Results: db.DBQueryResult{
-				Results:  db.QueryResult{},
-				Duration: 0,
-			},
+			Duration:  0,
+			Err:       errSQL,
+			Results:   db.QueryResult{},
 			Height:    80,
 			Width:     80,
 			YPosition: 0,

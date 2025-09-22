@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +16,8 @@ type ResultsPaneModel struct {
 	Height    int
 	Width     int
 	YPosition int
-	Results   db.DBQueryResult
+	Duration  time.Duration
+	Results   db.QueryResult
 	Err       error
 
 	ready    bool
@@ -34,8 +36,9 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return model, nil
 		}
 	case QueryMsg:
-		model.Results = msg.Results
+		model.Duration = msg.Duration
 		model.Err = msg.Err
+		model.Results = msg.Results
 		model.viewport.SetContent(model.ResultsView())
 	}
 
@@ -101,18 +104,18 @@ func (model ResultsPaneModel) ResultsView() string {
 
 	var builder strings.Builder
 
-	for row := range model.Results.Results {
+	for row := range model.Results {
 		builder.WriteString("---\n")
 
-		keys := make([]string, 0, len(model.Results.Results[row]))
-		for key := range model.Results.Results[row] {
+		keys := make([]string, 0, len(model.Results[row]))
+		for key := range model.Results[row] {
 			keys = append(keys, key)
 		}
 
 		sort.Strings(keys)
 
 		for _, key := range keys {
-			builder.WriteString(fmt.Sprintf("%s: %v\n", key, model.Results.Results[row][key]))
+			builder.WriteString(fmt.Sprintf("%s: %v\n", key, model.Results[row][key]))
 		}
 	}
 
@@ -120,16 +123,16 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
-	if model.Results.Duration.Seconds() == 0 {
+	if model.Duration.Seconds() == 0 {
 		return ""
 	}
 
 	numStr := "1 row"
 
-	numResults := len(model.Results.Results)
+	numResults := len(model.Results)
 	if numResults != 1 {
 		numStr = fmt.Sprintf("%d rows", numResults)
 	}
 
-	return fmt.Sprintf("(%s in %.3fs)", numStr, model.Results.Duration.Seconds())
+	return fmt.Sprintf("(%s in %.3fs)", numStr, model.Duration.Seconds())
 }
