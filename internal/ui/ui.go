@@ -6,21 +6,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/history"
 )
 
 type Model struct {
-	TextInput   textinput.Model
 	Query       string
 	Results     db.QueryResult
 	Err         error
 	DB          *db.DB
-	History     history.Model
 	ResultsPane ResultsPaneModel
+	QueryPane   QueryPaneModel
 }
 
 type DBMsg struct {
@@ -43,21 +40,15 @@ func Run() {
 }
 
 func InitialModel() Model {
-	input := textinput.New()
-	input.Placeholder = "SELECT * FROM users LIMIT 1;"
-	input.Focus()
-	input.CharLimit = 256
-	input.Width = 80
 
 	return Model{
-		DB:        nil,
-		Err:       nil,
-		Query:     "",
-		TextInput: input,
-		History:   history.Init("/tmp/.dbqhistory"),
-		Results:   db.QueryResult{},
+		DB:      nil,
+		Err:     nil,
+		Query:   "",
+		Results: db.QueryResult{},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
+		QueryPane:   QueryPaneModel{}.Init(),
 	}
 }
 
@@ -93,49 +84,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	m.TextInput, cmd = m.TextInput.Update(msg)
-	cmds = append(cmds, cmd)
-	m.History, cmd = m.History.Update(msg)
-	cmds = append(cmds, cmd)
 	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
-
+	cmds = append(cmds, cmd)
+	m.QueryPane, cmd = m.QueryPane.Update(msg)
 	cmds = append(cmds, cmd)
 
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter:
-			m.Query = m.TextInput.Value()
-
-			return m, query(m.Query, m.DB)
 		case tea.KeyTab:
 			return m.cycleFocus(), nil
 		case tea.KeyCtrlC, tea.KeyEsc:
-			m.History.Cleanup()
-
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.TextInput.View()))
+		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.QueryPane.View()))
 
+	case QueryExecMsg:
+		return m, query(msg.value, m.DB)
 	case QueryMsg:
 		var cmd tea.Cmd
 
 		if msg.Err == nil {
-			m.History, cmd = m.History.Update(history.PushMsg{Entry: m.Query})
-			m.TextInput.Blur()
+			m.QueryPane = m.QueryPane.Blur()
 			m.ResultsPane = m.ResultsPane.Focus()
 		}
 
 		return m, cmd
 	case DBMsg:
 		m.DB = msg.DB
-
-		return m, nil
-	case history.TraveledMsg:
-		m.TextInput.SetValue(m.History.Value)
-		m.TextInput.SetCursor(len(m.History.Value))
 
 		return m, nil
 	}
@@ -146,26 +124,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	if m.Err != nil {
 		return fmt.Sprintf(
-			"%s\n%s\n%s",
-			m.TextInput.View(),
-			m.Query,
+			"%s\n%s",
+			m.QueryPane.View(),
 			m.Err.Error(),
 		)
 	}
 
 	return fmt.Sprintf(
 		"%s\n%s",
-		withFocusView(m.TextInput.View(), m.TextInput.Focused()),
+		withFocusView(m.QueryPane.View(), m.QueryPane.Focused()),
 		withFocusView(m.ResultsPane.View(), m.ResultsPane.Focused()),
 	)
 }
 
 func (m Model) cycleFocus() Model {
-	if m.TextInput.Focused() {
-		m.TextInput.Blur()
+	if m.QueryPane.Focused() {
+		m.QueryPane = m.QueryPane.Blur()
 		m.ResultsPane = m.ResultsPane.Focus()
 	} else {
-		m.TextInput.Focus()
+		m.QueryPane = m.QueryPane.Focus()
 		m.ResultsPane = m.ResultsPane.Blur()
 	}
 
