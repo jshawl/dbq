@@ -32,20 +32,24 @@ type QueryMsg struct {
 }
 
 func Run() {
-
 	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
+		f, _ := tea.LogToFile("debug.log", "debug")
+
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				panic(err)
+			}
+		}()
 	}
+
 	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	_, err := p.Run()
 	if err != nil {
-		log.Fatal(err)
+		defer func() {
+			log.Fatal(err)
+		}()
 	}
 }
 

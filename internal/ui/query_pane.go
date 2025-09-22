@@ -47,6 +47,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		if !model.focused {
 			return model, tea.Batch(cmds...)
 		}
+
 		switch msg.Type {
 		case tea.KeyEnter:
 			return model, func() tea.Msg {
