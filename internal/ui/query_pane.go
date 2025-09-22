@@ -36,10 +36,6 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	if !model.focused {
-		return model, nil
-	}
-
 	model.History, cmd = model.History.Update(msg)
 	cmds = append(cmds, cmd)
 	model.TextInput, cmd = model.TextInput.Update(msg)
@@ -48,6 +44,9 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if !model.focused {
+			return model, tea.Batch(cmds...)
+		}
 		switch msg.Type {
 		case tea.KeyEnter:
 			return model, func() tea.Msg {
@@ -62,7 +61,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		model.TextInput.SetValue(model.History.Value)
 		model.TextInput.SetCursor(len(model.History.Value))
 
-		return model, nil
+		return model, tea.Batch(cmds...)
 	case QueryMsg:
 		if msg.Err == nil {
 			model.History, cmd = model.History.Update(history.PushMsg{Entry: msg.Query})

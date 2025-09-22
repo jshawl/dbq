@@ -26,22 +26,23 @@ type ResultsPaneModel struct {
 }
 
 func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
 			return model, nil
 		}
 	case QueryMsg:
+		var cmd tea.Cmd
 		model.Duration = msg.Duration
 		model.Err = msg.Err
 		model.Results = msg.Results
-		model.SetContent(model.ResultsView())
+		model.viewport.SetContent(model.ResultsView())
+		model.viewport, cmd = model.viewport.Update(msg)
+		return model, cmd
 	}
 
-	m, cmd := model.viewport.Update(msg)
-	model.viewport = m
-
-	return model, cmd
+	return model, nil
 }
 
 func (model ResultsPaneModel) Resize(width int, height int, yposition int) ResultsPaneModel {
@@ -81,12 +82,6 @@ func (model ResultsPaneModel) Blur() ResultsPaneModel {
 
 func (model ResultsPaneModel) New(width int, height int) viewport.Model {
 	return viewport.New(width, height)
-}
-
-func (model ResultsPaneModel) SetContent(content string) ResultsPaneModel {
-	model.viewport.SetContent(content)
-
-	return model
 }
 
 func (model ResultsPaneModel) View() string {

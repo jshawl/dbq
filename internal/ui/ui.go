@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,6 +32,15 @@ type QueryMsg struct {
 }
 
 func Run() {
+
+	if len(os.Getenv("DEBUG")) > 0 {
+		f, err := tea.LogToFile("debug.log", "debug")
+		if err != nil {
+			fmt.Println("fatal:", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+	}
 	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	_, err := p.Run()
@@ -103,14 +113,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case QueryExecMsg:
 		return m, query(msg.Value, m.DB)
 	case QueryMsg:
-		var cmd tea.Cmd
-
 		if msg.Err == nil {
 			m.QueryPane = m.QueryPane.Blur()
 			m.ResultsPane = m.ResultsPane.Focus()
 		}
 
-		return m, cmd
+		return m, tea.Batch(cmds...)
 	case DBMsg:
 		m.DB = msg.DB
 
