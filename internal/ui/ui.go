@@ -91,13 +91,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
+		rp   tea.Model
 	)
 
 	m.TextInput, cmd = m.TextInput.Update(msg)
 	cmds = append(cmds, cmd)
 	m.History, cmd = m.History.Update(msg)
 	cmds = append(cmds, cmd)
-	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
+	rp, cmd = m.ResultsPane.Update(msg)
+	m.ResultsPane = rp.(ResultsPaneModel)
 	cmds = append(cmds, cmd)
 
 	//nolint:exhaustive

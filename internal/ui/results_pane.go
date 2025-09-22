@@ -23,7 +23,11 @@ type ResultsPaneModel struct {
 	focused  bool
 }
 
-func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
+func (model ResultsPaneModel) Init() tea.Cmd {
+	return nil
+}
+
+func (model ResultsPaneModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
@@ -32,7 +36,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	case QueryMsg:
 		model.Results = msg.Results
 		model.Err = msg.Err
-		model.viewport.SetContent(model.resultsView())
+		model.viewport.SetContent(model.ResultsView())
 	}
 
 	m, cmd := model.viewport.Update(msg)
@@ -90,7 +94,7 @@ func (model ResultsPaneModel) View() string {
 	return fmt.Sprintf("%s\n%s", model.viewport.View(), model.footerView())
 }
 
-func (model ResultsPaneModel) resultsView() string {
+func (model ResultsPaneModel) ResultsView() string {
 	if model.Err != nil {
 		return model.Err.Error()
 	}

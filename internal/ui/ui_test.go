@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -152,46 +153,41 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
-	// t.Run("QueryMsg", func(t *testing.T) {
-	// 	t.Parallel()
+	t.Run("QueryMsg", func(t *testing.T) {
+		t.Parallel()
 
-	// 	userID := 789
-	// 	model := setupDatabaseModel(t)
-	// 	updatedModel, _ := model.Update(ui.QueryMsg{
-	// 		Err:     nil,
-	// 		Results: makeResults(0, userID),
-	// 	})
+		userID := 789
+		model := setupDatabaseModel(t)
+		updatedModel, _ := model.Update(ui.QueryMsg{
+			Err:     nil,
+			Results: makeResults(0, userID),
+		})
 
-	// 	typedModel := assertModelType[ui.Model](t, updatedModel)
+		typedModel := assertModelType[ui.Model](t, updatedModel)
 
-	// 	got := typedModel.Results.Results[0]["id"]
-	// 	if got != userID {
-	// 		t.Fatalf("expected first result to have id %d got %d", userID, got)
-	// 	}
+		if !typedModel.ResultsPane.Focused() {
+			t.Fatal("expected requery results to focus on viewport")
+		}
+	})
 
-	// 	if !typedModel.ResultsPane.Focused() {
-	// 		t.Fatal("expected requery results to focus on viewport")
-	// 	}
-	// })
+	t.Run("QueryMsg - err", func(t *testing.T) {
+		t.Parallel()
 
-	// t.Run("QueryMsg - err", func(t *testing.T) {
-	// 	t.Parallel()
+		model := setupDatabaseModel(t)
+		updatedModel, _ := model.Update(ui.QueryMsg{
+			Err: errSQL,
+			Results: db.DBQueryResult{
+				Results:  db.QueryResult{},
+				Duration: 0,
+			},
+		})
 
-	// 	model := setupDatabaseModel(t)
-	// 	updatedModel, _ := model.Update(ui.QueryMsg{
-	// 		Err: errSQL,
-	// 		Results: db.DBQueryResult{
-	// 			Results:  db.QueryResult{},
-	// 			Duration: 0,
-	// 		},
-	// 	})
+		typedModel := assertModelType[ui.Model](t, updatedModel)
 
-	// 	typedModel := assertModelType[ui.Model](t, updatedModel)
-
-	// 	if typedModel.ResultsPane.Focused() {
-	// 		t.Fatal("expected requery results not to focus on viewport")
-	// 	}
-	// })
+		if typedModel.ResultsPane.Focused() {
+			t.Fatal("expected requery results not to focus on viewport")
+		}
+	})
 
 	t.Run("history.TraveledMsg", func(t *testing.T) {
 		t.Parallel()
@@ -219,59 +215,9 @@ func TestUpdate(t *testing.T) {
 func TestView(t *testing.T) {
 	t.Parallel()
 
-	// t.Run("duration with 1 row", func(t *testing.T) {
-	// 	t.Parallel()
-
-	// 	model := setupDatabaseModel(t)
-	// 	model.Results = makeResults(time.Millisecond*2345, 123)
-
-	// 	view := model.View()
-	// 	if !strings.Contains(view, "(1 row in 2.345s)") {
-	// 		t.Fatalf("expected model error to be visible\n %s", view)
-	// 	}
-	// })
-
-	// t.Run("duration with 2 rows", func(t *testing.T) {
-	// 	t.Parallel()
-
-	// 	model := setupDatabaseModel(t)
-	// 	model.Results = makeResults(time.Millisecond*2345, 123, 456)
-
-	// 	view := model.View()
-	// 	if !strings.Contains(view, "(2 rows in 2.345s)") {
-	// 		t.Fatalf("expected duration to be visible\n %s", view)
-	// 	}
-	// })
-
-	// t.Run("errors", func(t *testing.T) {
-	// 	t.Parallel()
-
-	// 	model := setupDatabaseModel(t)
-	// 	model.Err = errSQL
-
-	// 	view := model.View()
-	// 	if !strings.Contains(view, "sql error") {
-	// 		t.Fatal("expected model error to be visible")
-	// 	}
-	// })
-
-	// t.Run("results", func(t *testing.T) {
-	// 	t.Parallel()
-
-	// 	model := setupDatabaseModel(t)
-	// 	updatedModel, _ := model.Update(ui.QueryMsg{
-	// 		Err:     nil,
-	// 		Results: makeResults(0, 666),
-	// 	})
-
-	// 	view := updatedModel.View()
-
-	// 	matched, _ := regexp.MatchString(
-	// 		`---\s+\ncreated_at: 2025-09-21T15:41:22\s+\nid: 666`,
-	// 		view,
-	// 	)
-	// 	if !matched {
-	// 		t.Fatalf("expected results to be visible, got \n %s", view)
-	// 	}
-	// })
+	model := setupDatabaseModel(t)
+	view := model.View()
+	if !strings.Contains(view, "> SELECT") {
+		t.Fatalf("expected view to contain a text input:\n%s", view)
+	}
 }
