@@ -14,7 +14,7 @@ import (
 func TestResultsPane_Update(t *testing.T) {
 	t.Parallel()
 
-	t.Run("QueryMsg", func(t *testing.T) {
+	t.Run("QueryResponseReceivedMsg", func(t *testing.T) {
 		t.Parallel()
 
 		userID := 789
@@ -26,11 +26,13 @@ func TestResultsPane_Update(t *testing.T) {
 			Err:       nil,
 			Results:   db.QueryResult{},
 		}
-		updatedModel, _ := model.Update(ui.QueryMsg{
-			Duration: 0,
-			Err:      nil,
-			Results:  makeResults(userID),
-			Query:    "select * from posts",
+		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: 0,
+				Err:      nil,
+				Results:  makeResults(userID),
+				Query:    "select * from posts",
+			},
 		})
 
 		got := updatedModel.Results[0]["id"]
@@ -39,7 +41,7 @@ func TestResultsPane_Update(t *testing.T) {
 		}
 	})
 
-	t.Run("QueryMsg - err", func(t *testing.T) {
+	t.Run("QueryResponseReceivedMsg - err", func(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
@@ -50,11 +52,13 @@ func TestResultsPane_Update(t *testing.T) {
 			Err:       nil,
 			Results:   db.QueryResult{},
 		}
-		updatedModel, _ := model.Update(ui.QueryMsg{
-			Duration: 0,
-			Err:      errSQL,
-			Results:  db.QueryResult{},
-			Query:    "not sql",
+		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: 0,
+				Err:      errSQL,
+				Results:  db.QueryResult{},
+				Query:    "not sql",
+			},
 		})
 
 		if !errors.Is(updatedModel.Err, errSQL) {

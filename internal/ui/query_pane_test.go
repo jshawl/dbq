@@ -28,12 +28,12 @@ func TestQueryPane_Update(t *testing.T) {
 			t.Fatalf("expected QueryMsg.Value to be set, got %s", queryMsg.Value)
 		}
 	})
-	t.Run("history.TraveledMsg", func(t *testing.T) {
+	t.Run("history.SetInputValueMsg", func(t *testing.T) {
 		t.Parallel()
 
 		//nolint:exhaustruct
 		model := ui.QueryPaneModel{}.New()
-		_, cmd := model.Update(history.TraveledMsg{
+		_, cmd := model.Update(history.SetInputValueMsg{
 			Value: "select * from posts limit 1;",
 		})
 
