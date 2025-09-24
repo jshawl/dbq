@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,18 +35,18 @@ type QueryResponseReceivedMsg struct {
 }
 
 func Run() {
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, _ := tea.LogToFile("debug.log", "debug")
+	f, _ := tea.LogToFile("debug.log", "debug")
 
-		defer func() {
-			err := f.Close()
-			if err != nil {
-				panic(err)
-			}
-		}()
-	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
+
+	log.Println("ui.Run()")
 
 	_, err := p.Run()
 	if err != nil {
