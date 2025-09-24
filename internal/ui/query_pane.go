@@ -37,22 +37,16 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
 			return model, nil
 		}
 
-		switch msg.Type {
-		case tea.KeyEnter:
-			return model, func() tea.Msg {
-				return QueryExecMsg{
-					Value: model.TextInput.Value(),
-				}
-			}
-		case tea.KeyCtrlC, tea.KeyEsc:
-			model.History.Cleanup()
+		if msg.Type == tea.KeyEnter {
+			return model, dispatch(QueryExecMsg{
+				Value: model.TextInput.Value(),
+			})
 		}
 	case history.SetInputValueMsg:
 		model.TextInput.SetValue(msg.Value)
@@ -60,7 +54,11 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 
 		return model, nil
 	case QueryResponseReceivedMsg:
-		return model, func() tea.Msg { return history.PushMsg{Entry: msg.Query} }
+		if msg.Err != nil {
+			return model, nil
+		}
+
+		return model, dispatch(history.PushMsg{Entry: msg.Query})
 	}
 
 	model.History, cmd = model.History.Update(msg)
