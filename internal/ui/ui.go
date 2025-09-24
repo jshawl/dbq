@@ -31,6 +31,10 @@ type QueryMsg struct {
 	Query    string
 }
 
+type QueryResponseReceivedMsg struct {
+	QueryMsg
+}
+
 func Run() {
 	if len(os.Getenv("DEBUG")) > 0 {
 		f, _ := tea.LogToFile("debug.log", "debug")
@@ -98,11 +102,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
-	cmds = append(cmds, cmd)
-	m.QueryPane, cmd = m.QueryPane.Update(msg)
-	cmds = append(cmds, cmd)
-
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -120,6 +119,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err == nil {
 			m.QueryPane = m.QueryPane.Blur()
 			m.ResultsPane = m.ResultsPane.Focus()
+			cmd = func() tea.Msg {
+				return QueryResponseReceivedMsg{
+					QueryMsg: msg,
+				}
+			}
+			cmds = append(cmds, cmd)
 		}
 
 		return m, tea.Batch(cmds...)
@@ -128,6 +133,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	}
+
+	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
+	cmds = append(cmds, cmd)
+
+	m.QueryPane, cmd = m.QueryPane.Update(msg)
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }

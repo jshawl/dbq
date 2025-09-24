@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"log"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/history"
@@ -30,24 +32,19 @@ func (model QueryPaneModel) New() QueryPaneModel {
 	return model
 }
 
+type UpdateChildrenMsg struct{}
+
 func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
 
-	if model.focused {
-		model.History, cmd = model.History.Update(msg)
-		cmds = append(cmds, cmd)
-	}
-	model.TextInput, cmd = model.TextInput.Update(msg)
-	cmds = append(cmds, cmd)
-
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
-			return model, tea.Batch(cmds...)
+			return model, nil
 		}
 
 		switch msg.Type {
@@ -61,16 +58,24 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 			model.History.Cleanup()
 		}
 	case history.TraveledMsg:
-		model.TextInput.SetValue(model.History.Value)
-		model.TextInput.SetCursor(len(model.History.Value))
+		model.TextInput.SetValue(msg.Value)
+		model.TextInput.SetCursor(len(msg.Value))
 
-		return model, tea.Batch(cmds...)
-	case QueryMsg:
-		if msg.Err == nil {
-			model.History, cmd = model.History.Update(history.PushMsg{Entry: msg.Query})
-			cmds = append(cmds, cmd)
-		}
+		// why does returning here cause an issue?
+		// return model, func() tea.Msg {
+		// 	log.Println(" returning update children msg")
+		// 	return UpdateChildrenMsg{}
+		// }
+	case QueryResponseReceivedMsg:
+		return model, func() tea.Msg { return history.PushMsg{Entry: msg.Query} }
 	}
+
+	log.Println("calling history.update with msg %s", msg)
+	model.History, cmd = model.History.Update(msg)
+	cmds = append(cmds, cmd)
+
+	model.TextInput, cmd = model.TextInput.Update(msg)
+	cmds = append(cmds, cmd)
 
 	return model, tea.Batch(cmds...)
 }

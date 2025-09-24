@@ -33,7 +33,9 @@ func TestQueryPane_Update(t *testing.T) {
 
 		//nolint:exhaustruct
 		model := ui.QueryPaneModel{}.New()
-		_, cmd := model.Update(history.TraveledMsg{})
+		_, cmd := model.Update(history.TraveledMsg{
+			Value: "select * from posts limit 1;",
+		})
 
 		if cmd != nil {
 			t.Fatal("expected cmd to be nil")

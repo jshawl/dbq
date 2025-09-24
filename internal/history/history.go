@@ -64,7 +64,7 @@ type TravelMsg struct {
 
 type TraveledMsg struct {
 	cursor int64
-	value  string
+	Value  string
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -84,7 +84,7 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case TraveledMsg:
 		model.cursor = msg.cursor
-		model.Value = msg.value
+		model.Value = msg.Value
 
 		return model, nil
 	case tea.KeyMsg:
@@ -186,13 +186,13 @@ func (model Model) travel(direction string) tea.Cmd {
 		if err != nil {
 			return TraveledMsg{
 				cursor: model.cursor,
-				value:  model.Value,
+				Value:  model.Value,
 			}
 		}
 
 		return TraveledMsg{
 			cursor: id,
-			value:  query,
+			Value:  query,
 		}
 	}
 }
