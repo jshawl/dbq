@@ -35,7 +35,6 @@ type QueryResponseReceivedMsg struct {
 }
 
 func Run() {
-
 	f, _ := tea.LogToFile("debug.log", "debug")
 
 	defer func() {
@@ -48,6 +47,7 @@ func Run() {
 	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	log.Println("ui.Run()")
+
 	_, err := p.Run()
 	if err != nil {
 		defer func() {
