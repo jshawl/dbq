@@ -68,7 +68,7 @@ func (model ResultsPaneModel) Resize(width int, height int, yposition int) Resul
 	height = height - footerHeight - yposition
 	if !model.ready {
 		model.viewport = model.New(width, height)
-		model.viewport.YPosition = yposition
+		model.viewport.YPosition = 0
 		model.ready = true
 	} else {
 		model.viewport.Width = width

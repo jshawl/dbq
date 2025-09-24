@@ -3,8 +3,10 @@ package ui_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/history"
 	"github.com/jshawl/dbq/internal/testutil"
 	"github.com/jshawl/dbq/internal/ui"
@@ -12,6 +14,19 @@ import (
 
 func TestQueryPane_Update(t *testing.T) {
 	t.Parallel()
+
+	t.Run("keys - unfocused", func(t *testing.T) {
+		t.Parallel()
+
+		//nolint:exhaustruct
+		model := ui.QueryPaneModel{}.New()
+		model = model.Blur()
+		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
+
+		if cmd != nil {
+			t.Fatal("expected query pane to ignore keys while not focused")
+		}
+	})
 
 	t.Run("keys - enter", func(t *testing.T) {
 		t.Parallel()
@@ -39,6 +54,46 @@ func TestQueryPane_Update(t *testing.T) {
 
 		if cmd != nil {
 			t.Fatal("expected cmd to be nil")
+		}
+	})
+
+	t.Run("QueryResponseReceivedMsg - Err", func(t *testing.T) {
+		t.Parallel()
+
+		//nolint:exhaustruct
+		model := ui.QueryPaneModel{}.New()
+		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: 0,
+				Err:      errSQL,
+				Query:    "not sql",
+				Results:  db.QueryResult{},
+			},
+		})
+
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
+		}
+	})
+
+	t.Run("QueryResponseReceivedMsg - Results", func(t *testing.T) {
+		t.Parallel()
+
+		//nolint:exhaustruct
+		model := ui.QueryPaneModel{}.New()
+		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: time.Millisecond * 2345,
+				Err:      nil,
+				Results:  makeResults(456),
+				Query:    "select * from foo;",
+			},
+		})
+
+		msg := testutil.AssertMsgType[history.PushMsg](t, cmd)
+
+		if msg.Entry != "select * from foo;" {
+			t.Fatal("expected history push msg")
 		}
 	})
 }
