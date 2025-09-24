@@ -14,7 +14,7 @@ import (
 func TestResultsPane_Update(t *testing.T) {
 	t.Parallel()
 
-	t.Run("QueryMsg", func(t *testing.T) {
+	t.Run("QueryResponseReceivedMsg", func(t *testing.T) {
 		t.Parallel()
 
 		userID := 789
@@ -26,21 +26,22 @@ func TestResultsPane_Update(t *testing.T) {
 			Err:       nil,
 			Results:   db.QueryResult{},
 		}
-		updatedModel, _ := model.Update(ui.QueryMsg{
-			Duration: 0,
-			Err:      nil,
-			Results:  makeResults(userID),
+		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: 0,
+				Err:      nil,
+				Results:  makeResults(userID),
+				Query:    "select * from posts",
+			},
 		})
 
-		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
-
-		got := typedModel.Results[0]["id"]
+		got := updatedModel.Results[0]["id"]
 		if got != userID {
 			t.Fatalf("expected first result to have id %d got %d", userID, got)
 		}
 	})
 
-	t.Run("QueryMsg - err", func(t *testing.T) {
+	t.Run("QueryResponseReceivedMsg - err", func(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
@@ -51,15 +52,16 @@ func TestResultsPane_Update(t *testing.T) {
 			Err:       nil,
 			Results:   db.QueryResult{},
 		}
-		updatedModel, _ := model.Update(ui.QueryMsg{
-			Duration: 0,
-			Err:      errSQL,
-			Results:  db.QueryResult{},
+		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
+			QueryMsg: ui.QueryMsg{
+				Duration: 0,
+				Err:      errSQL,
+				Results:  db.QueryResult{},
+				Query:    "not sql",
+			},
 		})
 
-		typedModel := assertModelType[ui.ResultsPaneModel](t, updatedModel)
-
-		if !errors.Is(typedModel.Err, errSQL) {
+		if !errors.Is(updatedModel.Err, errSQL) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
@@ -148,4 +150,28 @@ func TestResultsPane_ResultsView(t *testing.T) {
 			t.Fatal("expected model error to be visible")
 		}
 	})
+}
+
+func TestResultsPane_Resize(t *testing.T) {
+	t.Parallel()
+
+	model := ui.ResultsPaneModel{
+		Duration:  0,
+		Err:       errSQL,
+		Results:   db.QueryResult{},
+		Height:    80,
+		Width:     80,
+		YPosition: 0,
+	}
+
+	model = model.Resize(20, 30, 1)
+	if model.Width != 20 {
+		t.Fatal("expected resize to set width")
+	}
+
+	model = model.Resize(40, 50, 1)
+	// subtracts the header and footer
+	if model.Height != 48 {
+		t.Fatalf("expected resize to set height, got %d", model.Height)
+	}
 }

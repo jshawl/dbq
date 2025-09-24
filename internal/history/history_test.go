@@ -106,10 +106,12 @@ func TestUpdate(t *testing.T) {
 		hist := setupHistoryModel(t)
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 
-		if hist.Value != "" {
-			t.Fatalf("expected empty string, got %s", hist.Value)
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
+
+		if msg.Value != "" {
+			t.Fatalf("expected empty string, got %s", msg.Value)
 		}
 	})
 
@@ -124,14 +126,15 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if hist.Value != "" {
-			t.Fatalf("expected empty string, got %s", hist.Value)
+		if msg.Value != "" {
+			t.Fatalf("expected empty string, got %s", msg.Value)
 		}
 	})
 
-	t.Run("TravelMsg(previous) returns the last row if the cursor is 0", func(t *testing.T) {
+	t.Run("TravelMsg(previous) returns no entry if the cursor is 0", func(t *testing.T) {
 		t.Parallel()
 
 		var cmd tea.Cmd
@@ -145,10 +148,11 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(history.PushedMsg{})
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if hist.Value != "select * from users limit 1;" {
-			t.Fatalf("expected current, got %s", hist.Value)
+		if msg.Value != "" {
+			t.Fatalf("expected empty string, got %s", msg.Value)
 		}
 	})
 
@@ -169,10 +173,12 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 
-		if hist.Value != "select * from users limit 2;" {
-			t.Fatalf("expected current, got %s", hist.Value)
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
+
+		if msg.Value != "select * from users limit 2;" {
+			t.Fatalf("expected current, got %s", msg.Value)
 		}
 	})
 
@@ -190,17 +196,19 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if hist.Value != "select * from users limit 1;" {
-			t.Fatalf("expected current, got %s", hist.Value)
+		if msg.Value != "select * from users limit 1;" {
+			t.Fatalf("expected current, got %s", msg.Value)
 		}
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		msg = testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if hist.Value != "select * from users limit 2;" {
-			t.Fatalf("expected current, got %s", hist.Value)
+		if msg.Value != "select * from users limit 2;" {
+			t.Fatalf("expected current, got %s", msg.Value)
 		}
 	})
 
@@ -212,10 +220,11 @@ func TestUpdate(t *testing.T) {
 		hist := setupHistoryModel(t)
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if hist.Value != "" {
-			t.Fatalf("expected empty string, got %s", hist.Value)
+		if msg.Value != "" {
+			t.Fatalf("expected empty string, got %s", msg.Value)
 		}
 	})
 

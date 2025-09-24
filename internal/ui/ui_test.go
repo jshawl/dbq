@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	db "github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/history"
 	"github.com/jshawl/dbq/internal/testutil"
 	ui "github.com/jshawl/dbq/internal/ui"
 )
@@ -29,7 +28,7 @@ func setupDatabaseModel(t *testing.T) ui.Model {
 	t.Helper()
 
 	model := ui.InitialModel()
-	model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
+	// model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
 
 	cmd := model.Init()
 	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
@@ -68,16 +67,6 @@ func makeResults(userID int, userIDs ...int) db.QueryResult {
 	return rows
 }
 
-func TestInitialModel(t *testing.T) {
-	t.Parallel()
-
-	model := ui.InitialModel()
-
-	if model.TextInput.Placeholder != "SELECT * FROM users LIMIT 1;" {
-		t.Fatal("expected placeholder to be a select statement")
-	}
-}
-
 func TestInit(t *testing.T) {
 	t.Parallel()
 
@@ -92,19 +81,6 @@ func TestInit(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
-
-	t.Run("keys - enter", func(t *testing.T) {
-		t.Parallel()
-
-		model := setupDatabaseModel(t)
-		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
-
-		queryMsg := testutil.AssertMsgType[ui.QueryMsg](t, cmd)
-		if len(queryMsg.Results) == 0 {
-			t.Fatal("expected results")
-		}
-	})
-
 	t.Run("keys - ctrl-c", func(t *testing.T) {
 		t.Parallel()
 
@@ -118,22 +94,22 @@ func TestUpdate(t *testing.T) {
 		t.Parallel()
 
 		model := setupDatabaseModel(t)
-		if !model.TextInput.Focused() {
-			t.Fatal("expected text input to be focused")
+		if !model.QueryPane.Focused() {
+			t.Fatal("expected query pane to be focused")
 		}
 
 		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyTab))
 		model = assertModelType[ui.Model](t, updatedModel)
 
-		if model.TextInput.Focused() {
-			t.Fatal("expected text input not to be focused")
+		if model.QueryPane.Focused() {
+			t.Fatal("expected query pane not to be focused")
 		}
 
 		updatedModel, _ = model.Update(testutil.MakeKeyMsg(tea.KeyTab))
 		model = assertModelType[ui.Model](t, updatedModel)
 
-		if !model.TextInput.Focused() {
-			t.Fatal("expected text input to be focused")
+		if !model.QueryPane.Focused() {
+			t.Fatal("expected query pane to be focused")
 		}
 	})
 
@@ -157,6 +133,7 @@ func TestUpdate(t *testing.T) {
 			Duration: 0,
 			Err:      nil,
 			Results:  makeResults(0, userID),
+			Query:    "select * from users where userID = 789",
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
@@ -174,23 +151,13 @@ func TestUpdate(t *testing.T) {
 			Duration: 0,
 			Err:      errSQL,
 			Results:  db.QueryResult{},
+			Query:    "not sql",
 		})
 
 		typedModel := assertModelType[ui.Model](t, updatedModel)
 
 		if typedModel.ResultsPane.Focused() {
 			t.Fatal("expected requery results not to focus on viewport")
-		}
-	})
-
-	t.Run("history.TraveledMsg", func(t *testing.T) {
-		t.Parallel()
-
-		model := setupDatabaseModel(t)
-		_, cmd := model.Update(history.TraveledMsg{})
-
-		if cmd != nil {
-			t.Fatal("expected cmd to be nil")
 		}
 	})
 

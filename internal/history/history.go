@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"math"
 
 	tea "github.com/charmbracelet/bubbletea"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type Model struct {
-	Value  string
 	cursor int64
 	db     *sql.DB
 }
@@ -35,9 +35,8 @@ func Init(path string) Model {
 	}
 
 	return Model{
-		cursor: 0,
+		cursor: math.MaxInt32,
 		db:     database,
-		Value:  "",
 	}
 }
 
@@ -64,7 +63,11 @@ type TravelMsg struct {
 
 type TraveledMsg struct {
 	cursor int64
-	value  string
+	Value  string
+}
+
+type SetInputValueMsg struct {
+	Value string
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -84,19 +87,24 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case TraveledMsg:
 		model.cursor = msg.cursor
-		model.Value = msg.value
 
-		return model, nil
+		return model, model.dispatch(SetInputValueMsg{Value: msg.Value})
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyUp:
-			return model, func() tea.Msg { return TravelMsg{Direction: "previous"} }
+			return model, model.dispatch(TravelMsg{Direction: "previous"})
 		case tea.KeyDown:
-			return model, func() tea.Msg { return TravelMsg{Direction: "next"} }
+			return model, model.dispatch(TravelMsg{Direction: "next"})
 		}
 	}
 
 	return model, nil
+}
+
+func (model Model) dispatch(msg tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		return msg
+	}
 }
 
 func (model Model) push(entry string) tea.Cmd {
@@ -158,11 +166,7 @@ func (model Model) travel(direction string) tea.Cmd {
 		}
 
 		if direction == "previous" {
-			if model.cursor == 0 {
-				sql = "select id, query from history where 0 = (?) order by id desc limit 1;"
-			} else {
-				sql = "select id, query from history where id < (?) order by id desc limit 1;"
-			}
+			sql = "select id, query from history where id < (?) order by id desc limit 1;"
 		}
 
 		stmt, _ := model.db.PrepareContext(
@@ -184,15 +188,26 @@ func (model Model) travel(direction string) tea.Cmd {
 
 		err = stmt.QueryRowContext(context.Background(), model.cursor).Scan(&id, &query)
 		if err != nil {
+			cursor := model.cursor
+			if direction == "next" {
+				cursor = math.MaxInt32
+			}
+
+			if direction == "previous" {
+				cursor = 0
+			}
+
 			return TraveledMsg{
-				cursor: model.cursor,
-				value:  model.Value,
+				cursor: cursor,
+				Value:  "",
 			}
 		}
 
+		log.Printf("history.Traveled id: %d  query: %s", id, query)
+
 		return TraveledMsg{
 			cursor: id,
-			value:  query,
+			Value:  query,
 		}
 	}
 }
