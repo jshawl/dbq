@@ -41,6 +41,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model.Err = msg.Err
 		model.Results = msg.Results
 		model.viewport.SetContent(model.ResultsView())
+		model.viewport.YPosition = 0
 
 		return model, tea.Batch(cmds...)
 	}
