@@ -95,12 +95,13 @@ func query(sql string, db *db.DB) tea.Cmd {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
+func dispatch(msg tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		return msg
+	}
+}
 
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -108,32 +109,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyTab:
 			return m.cycleFocus(), nil
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.QueryPane.History.Cleanup()
+
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.QueryPane.View()))
-
-		return m, nil
+		return m, dispatch(WindowSizeMsg{
+			Width:     msg.Width,
+			Height:    msg.Height,
+			YPosition: lipgloss.Height(m.QueryPane.View()),
+		})
 	case QueryExecMsg:
 		return m, query(msg.Value, m.DB)
 	case QueryMsg:
 		if msg.Err == nil {
 			m.QueryPane = m.QueryPane.Blur()
 			m.ResultsPane = m.ResultsPane.Focus()
-			cmd = func() tea.Msg {
-				return QueryResponseReceivedMsg{
-					QueryMsg: msg,
-				}
-			}
-			cmds = append(cmds, cmd)
 		}
 
-		return m, tea.Batch(cmds...)
+		return m, dispatch(QueryResponseReceivedMsg{
+			QueryMsg: msg,
+		})
 	case DBMsg:
 		m.DB = msg.DB
 
 		return m, nil
 	}
+
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
 
 	m.ResultsPane, cmd = m.ResultsPane.Update(msg)
 	cmds = append(cmds, cmd)

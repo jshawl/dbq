@@ -25,16 +25,17 @@ type ResultsPaneModel struct {
 	focused  bool
 }
 
-func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
+type WindowSizeMsg struct {
+	Height    int
+	Width     int
+	YPosition int
+}
 
+func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
-			return model, tea.Batch(cmds...)
+			return model, nil
 		}
 	case QueryResponseReceivedMsg:
 		model.Duration = msg.Duration
@@ -43,8 +44,17 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model.viewport.SetContent(model.ResultsView())
 		model.viewport.YPosition = 0
 
-		return model, tea.Batch(cmds...)
+		return model, nil
+	case WindowSizeMsg:
+		model = model.Resize(msg.Width, msg.Height, msg.YPosition)
+
+		return model, nil
 	}
+
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
 
 	model.viewport, cmd = model.viewport.Update(msg)
 	cmds = append(cmds, cmd)
