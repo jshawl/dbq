@@ -134,7 +134,7 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
-	t.Run("TravelMsg(previous) returns the last row if the cursor is 0", func(t *testing.T) {
+	t.Run("TravelMsg(previous) returns no entry if the cursor is 0", func(t *testing.T) {
 		t.Parallel()
 
 		var cmd tea.Cmd
@@ -151,8 +151,8 @@ func TestUpdate(t *testing.T) {
 		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
-		if msg.Value != "select * from users limit 1;" {
-			t.Fatalf("expected current, got %s", msg.Value)
+		if msg.Value != "" {
+			t.Fatalf("expected empty string, got %s", msg.Value)
 		}
 	})
 
@@ -204,7 +204,7 @@ func TestUpdate(t *testing.T) {
 		}
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg = testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
 		if msg.Value != "select * from users limit 2;" {

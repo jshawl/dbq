@@ -188,8 +188,15 @@ func (model Model) travel(direction string) tea.Cmd {
 
 		err = stmt.QueryRowContext(context.Background(), model.cursor).Scan(&id, &query)
 		if err != nil {
+			cursor := model.cursor
+			if direction == "next" {
+				cursor = math.MaxInt32
+			}
+			if direction == "previous" {
+				cursor = 0
+			}
 			return TraveledMsg{
-				cursor: model.cursor,
+				cursor: cursor,
 			}
 		}
 
