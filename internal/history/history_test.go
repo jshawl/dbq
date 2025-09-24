@@ -106,7 +106,7 @@ func TestUpdate(t *testing.T) {
 		hist := setupHistoryModel(t)
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
@@ -126,7 +126,7 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
 		if msg.Value != "" {
@@ -148,7 +148,7 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(history.PushedMsg{})
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
 		if msg.Value != "" {
@@ -173,7 +173,7 @@ func TestUpdate(t *testing.T) {
 		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
@@ -204,7 +204,7 @@ func TestUpdate(t *testing.T) {
 		}
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg = testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
 		if msg.Value != "select * from users limit 2;" {
@@ -220,7 +220,7 @@ func TestUpdate(t *testing.T) {
 		hist := setupHistoryModel(t)
 
 		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
+		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
 		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
 
 		if msg.Value != "" {

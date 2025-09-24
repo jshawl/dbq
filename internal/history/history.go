@@ -192,11 +192,14 @@ func (model Model) travel(direction string) tea.Cmd {
 			if direction == "next" {
 				cursor = math.MaxInt32
 			}
+
 			if direction == "previous" {
 				cursor = 0
 			}
+
 			return TraveledMsg{
 				cursor: cursor,
+				Value:  "",
 			}
 		}
 

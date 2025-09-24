@@ -113,6 +113,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.ResultsPane = m.ResultsPane.Resize(msg.Width, msg.Height, lipgloss.Height(m.QueryPane.View()))
+
 		return m, nil
 	case QueryExecMsg:
 		return m, query(msg.Value, m.DB)
