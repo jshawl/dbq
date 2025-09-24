@@ -14,6 +14,33 @@ import (
 func TestResultsPane_Update(t *testing.T) {
 	t.Parallel()
 
+	t.Run("WindowSizeMsg", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.ResultsPaneModel{
+			Height:    0,
+			Width:     0,
+			YPosition: 0,
+			Duration:  0,
+			Err:       nil,
+			Results:   db.QueryResult{},
+		}
+		updatedModel, _ := model.Update(ui.WindowSizeMsg{
+			Height:    42,
+			Width:     37,
+			YPosition: 2,
+		})
+
+		// height - yposition (2) - footer (1)
+		if updatedModel.Height != 39 {
+			t.Fatalf("expected WindowSizeMsg.Height to be 40, got %d", updatedModel.Height)
+		}
+
+		if updatedModel.Width != 37 {
+			t.Fatalf("expected WindowSizeMsg.Width to be 37, got %d", updatedModel.Width)
+		}
+	})
+
 	t.Run("QueryResponseReceivedMsg", func(t *testing.T) {
 		t.Parallel()
 

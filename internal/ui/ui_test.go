@@ -124,6 +124,20 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
+	t.Run("QueryExecMsg", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		_, cmd := model.Update(ui.QueryExecMsg{
+			Value: "select * from users where id = 1",
+		})
+
+		msg := testutil.AssertMsgType[ui.QueryMsg](t, cmd)
+		if len(msg.Results) != 1 {
+			t.Fatal("expected QueryExecMsg to query actual db")
+		}
+	})
+
 	t.Run("QueryMsg", func(t *testing.T) {
 		t.Parallel()
 
@@ -176,10 +190,26 @@ func TestUpdate(t *testing.T) {
 func TestView(t *testing.T) {
 	t.Parallel()
 
-	model := setupDatabaseModel(t)
+	t.Run("QueryPane input visible", func(t *testing.T) {
+		t.Parallel()
 
-	view := model.View()
-	if !strings.Contains(view, "> SELECT") {
-		t.Fatalf("expected view to contain a text input:\n%s", view)
-	}
+		model := setupDatabaseModel(t)
+
+		view := model.View()
+		if !strings.Contains(view, "> SELECT") {
+			t.Fatalf("expected view to contain a text input:\n%s", view)
+		}
+	})
+
+	t.Run("ResultsPane Err", func(t *testing.T) {
+		t.Parallel()
+
+		model := setupDatabaseModel(t)
+		model.Err = errSQL
+
+		view := model.View()
+		if !strings.Contains(view, errSQL.Error()) {
+			t.Fatalf("expected view to contain a text input:\n%s", view)
+		}
+	})
 }
