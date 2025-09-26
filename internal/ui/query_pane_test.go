@@ -92,7 +92,7 @@ func TestQueryPane_Update(t *testing.T) {
 
 		msg := testutil.AssertMsgType[history.PushMsg](t, cmd)
 
-		if msg.Entry != "select * from foo;" {
+		if msg.Query != "select * from foo;" {
 			t.Fatal("expected history push msg")
 		}
 	})

@@ -1,6 +1,7 @@
 package history_test
 
 import (
+	"math"
 	"os"
 	"testing"
 
@@ -71,7 +72,6 @@ func setupHistoryModel(t *testing.T) history.Model {
 	return model
 }
 
-//nolint:cyclop
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -81,151 +81,13 @@ func TestUpdate(t *testing.T) {
 		var cmd tea.Cmd
 
 		hist := setupHistoryModel(t)
-		_, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
-		testutil.AssertMsgType[history.PushedMsg](t, cmd)
-	})
 
-	t.Run("UnknownMsg", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		_, cmd = hist.Update(nil)
-		if cmd != nil {
-			t.Fatal("expected cmd to be nil")
-		}
-	})
-
-	t.Run("TravelMsg(previous) does not update the Value if no results", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "" {
-			t.Fatalf("expected empty string, got %s", msg.Value)
-		}
-	})
-
-	t.Run("TravelMsg(previous) does not update the Value if one result", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "" {
-			t.Fatalf("expected empty string, got %s", msg.Value)
-		}
-	})
-
-	t.Run("TravelMsg(previous) returns no entry if the cursor is 0", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
-		testutil.AssertMsgType[history.PushedMsg](t, cmd)
-
-		// reset
-		hist, _ = hist.Update(history.PushedMsg{})
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "" {
-			t.Fatalf("expected empty string, got %s", msg.Value)
-		}
-	})
-
-	t.Run("TravelMsg(previous) sets the Value to the penultimate row", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 2;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 3;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "select * from users limit 2;" {
-			t.Fatalf("expected current, got %s", msg.Value)
-		}
-	})
-
-	t.Run("TravelMsg(next) sets the Value to the next row", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 1;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.PushMsg{Entry: "select * from users limit 2;"})
-		hist, _ = hist.Update(testutil.AssertMsgType[history.PushedMsg](t, cmd))
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "previous"})
-		hist, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "select * from users limit 1;" {
-			t.Fatalf("expected current, got %s", msg.Value)
+		_, cmd = hist.Update(history.PushMsg{Query: "select * from users limit 1;"})
+		if cmd == nil {
+			t.Fatal("expected PushMsg to return a msg")
 		}
 
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-		msg = testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "select * from users limit 2;" {
-			t.Fatalf("expected current, got %s", msg.Value)
-		}
-	})
-
-	t.Run("TravelMsg(next) does not update the Value if no results", func(t *testing.T) {
-		t.Parallel()
-
-		var cmd tea.Cmd
-
-		hist := setupHistoryModel(t)
-
-		hist, cmd = hist.Update(history.TravelMsg{Direction: "next"})
-		_, cmd = hist.Update(testutil.AssertMsgType[history.TraveledMsg](t, cmd))
-		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
-
-		if msg.Value != "" {
-			t.Fatalf("expected empty string, got %s", msg.Value)
-		}
+		_, _ = hist.Update(cmd())
 	})
 
 	t.Run("tea.KeyMsg(up)", func(t *testing.T) {
@@ -235,11 +97,18 @@ func TestUpdate(t *testing.T) {
 
 		hist := setupHistoryModel(t)
 
-		_, cmd = hist.Update(testutil.MakeKeyMsg(tea.KeyUp))
+		hist.Push("select * from users limit 1;")
+		hist.Push("select * from users limit 2;")
+		hist = hist.SetCursor(2)
 
-		msg := testutil.AssertMsgType[history.TravelMsg](t, cmd)
-		if msg.Direction != "previous" {
-			t.Fatal("expected msg.Direction to be 'previous'")
+		// key event
+		_, cmd = hist.Update(testutil.MakeKeyMsg(tea.KeyUp))
+		// query
+		_, cmd = hist.Update(cmd())
+		// response
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
+		if msg.Value != "select * from users limit 1;" {
+			t.Fatalf("expected msg.Direction to be 'previous', got %s", msg.Value)
 		}
 	})
 
@@ -250,11 +119,141 @@ func TestUpdate(t *testing.T) {
 
 		hist := setupHistoryModel(t)
 
-		_, cmd = hist.Update(testutil.MakeKeyMsg(tea.KeyDown))
+		hist.Push("select * from users limit 1;")
+		hist.Push("select * from users limit 4;")
+		hist = hist.SetCursor(1)
 
-		msg := testutil.AssertMsgType[history.TravelMsg](t, cmd)
-		if msg.Direction != "next" {
-			t.Fatal("expected msg.Direction to be 'previous'")
+		// key event
+		_, cmd = hist.Update(testutil.MakeKeyMsg(tea.KeyDown))
+		// query
+		_, cmd = hist.Update(cmd())
+		// response
+		msg := testutil.AssertMsgType[history.SetInputValueMsg](t, cmd)
+		if msg.Value != "select * from users limit 4;" {
+			t.Fatal("wrong value")
+		}
+	})
+
+	t.Run("unknownMsg", func(t *testing.T) {
+		t.Parallel()
+
+		var cmd tea.Cmd
+
+		hist := setupHistoryModel(t)
+		_, cmd = hist.Update(testutil.MakeKeyMsg(tea.KeyLeft))
+
+		if cmd != nil {
+			t.Fatal("expected cmd to be nil")
+		}
+	})
+}
+
+func TestPrevious(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no entries - no cursor movement", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		cursor, query := hist.Previous()
+
+		if cursor != 0 {
+			t.Fatal("expected cursor to be 0")
+		}
+
+		if query != "" {
+			t.Fatal("expected query to be ''")
+		}
+	})
+
+	t.Run("one entry - no cursor movement", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		hist.Push("select * from users limit 1;")
+		hist.SetCursor(1)
+		cursor, query := hist.Previous()
+
+		if cursor != 1 {
+			t.Fatalf("expected cursor to be 1, got %d", cursor)
+		}
+
+		if query != "select * from users limit 1;" {
+			t.Fatal("expected query to be 'select * from users limit 1;'")
+		}
+	})
+
+	t.Run("two entries - cursor decrements", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		hist.Push("select * from users limit 1;")
+		hist.Push("select * from users limit 2;")
+		hist.SetCursor(3)
+		cursor, query := hist.Previous()
+
+		if cursor != 2 {
+			t.Fatalf("expected cursor to be 2, got %d", cursor)
+		}
+
+		if query != "select * from users limit 2;" {
+			t.Fatalf("expected query to be 'select * from users limit 2;', got %s", query)
+		}
+	})
+}
+
+func TestNext(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no entries - no cursor movement", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		cursor, query := hist.Next()
+
+		if cursor != math.MaxInt32 {
+			t.Fatalf("expected cursor to be math.MaxInt32, got %d", cursor)
+		}
+
+		if query != "" {
+			t.Fatal("expected query to be ''")
+		}
+	})
+
+	t.Run("one entry - no cursor movement", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		hist.Push("select * from users limit 1;")
+		hist = hist.SetCursor(1)
+		cursor, query := hist.Next()
+
+		if cursor != math.MaxInt32 {
+			t.Fatalf("expected cursor to be math.MaxInt32, got %d", cursor)
+		}
+
+		if query != "" {
+			t.Fatalf("expected query to be '', got %s", query)
+		}
+	})
+
+	t.Run("two entries - cursor increments", func(t *testing.T) {
+		t.Parallel()
+
+		hist := setupHistoryModel(t)
+		hist.Push("select * from users limit 1;")
+
+		hist.Push("select * from users limit 2;")
+		hist.Push("select * from users limit 3;")
+		hist = hist.SetCursor(1)
+		cursor, query := hist.Next()
+
+		if cursor != 2 {
+			t.Fatalf("expected cursor to be 2, got %d", cursor)
+		}
+
+		if query != "select * from users limit 2;" {
+			t.Fatalf("expected query to be 'select * from users limit 2;', got %s", query)
 		}
 	})
 }

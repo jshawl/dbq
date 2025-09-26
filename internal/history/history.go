@@ -50,20 +50,16 @@ func (h Model) Cleanup() {
 }
 
 type PushMsg struct {
-	Entry string
+	Query string
 }
 
-type PushedMsg struct {
+type pushedMsg struct {
 	id int64
 }
 
-type TravelMsg struct {
-	Direction string
-}
-
-type TraveledMsg struct {
+type traveledMsg struct {
 	cursor int64
-	Value  string
+	query  string
 }
 
 type SetInputValueMsg struct {
@@ -74,31 +70,81 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	//nolint:exhaustive
 	switch msg := msg.(type) {
 	case PushMsg:
-		entry := msg.Entry
+		query := msg.Query
 
-		return model, model.push(entry)
-	case PushedMsg:
+		return model, model.push(query)
+	case pushedMsg:
 		cursor := msg.id
 		model.cursor = cursor
 
 		return model, nil
-	case TravelMsg:
-		return model, model.travel(msg.Direction)
-
-	case TraveledMsg:
+	case traveledMsg:
 		model.cursor = msg.cursor
 
-		return model, model.dispatch(SetInputValueMsg{Value: msg.Value})
+		return model, model.dispatch(SetInputValueMsg{Value: msg.query})
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyUp:
-			return model, model.dispatch(TravelMsg{Direction: "previous"})
+			return model, model.travelCmd("previous")
 		case tea.KeyDown:
-			return model, model.dispatch(TravelMsg{Direction: "next"})
+			return model, model.travelCmd("next")
 		}
 	}
 
 	return model, nil
+}
+
+func (model Model) SetCursor(cursor int64) Model {
+	model.cursor = cursor
+
+	return model
+}
+
+func (model Model) Previous() (int64, string) {
+	return model.travel("previous")
+}
+
+func (model Model) Next() (int64, string) {
+	return model.travel("next")
+}
+
+func (model Model) Push(query string) int64 {
+	transaction, err := model.db.BeginTx(
+		context.Background(),
+		&sql.TxOptions{ReadOnly: false, Isolation: 0},
+	)
+	if err != nil {
+		log.Fatal("db begin err")
+	}
+
+	stmt, err := transaction.PrepareContext(
+		context.Background(),
+		"insert into history (query) values (?)",
+	)
+	if err != nil {
+		log.Fatal("prepare err")
+	}
+
+	result, _ := stmt.ExecContext(context.Background(), query)
+
+	err = transaction.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	lastInsertId, err := result.LastInsertId()
+	if err != nil {
+		log.Fatal("exec err")
+	}
+
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	return lastInsertId
 }
 
 func (model Model) dispatch(msg tea.Msg) tea.Cmd {
@@ -107,107 +153,75 @@ func (model Model) dispatch(msg tea.Msg) tea.Cmd {
 	}
 }
 
-func (model Model) push(entry string) tea.Cmd {
+func (model Model) push(query string) tea.Cmd {
 	return func() tea.Msg {
-		transaction, err := model.db.BeginTx(
-			context.Background(),
-			&sql.TxOptions{ReadOnly: false, Isolation: 0},
-		)
-		if err != nil {
-			log.Fatal("db begin err")
-		}
-
-		stmt, err := transaction.PrepareContext(
-			context.Background(),
-			"insert into history (query) values (?)",
-		)
-		if err != nil {
-			log.Fatal("prepare err")
-		}
-
-		result, _ := stmt.ExecContext(context.Background(), entry)
-
-		err = transaction.Commit()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		lastInsertId, err := result.LastInsertId()
-		if err != nil {
-			log.Fatal("exec err")
-		}
-
-		defer func() {
-			err := stmt.Close()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}()
-
-		return PushedMsg{
-			id: lastInsertId,
+		return pushedMsg{
+			id: model.Push(query),
 		}
 	}
 }
 
-func (model Model) travel(direction string) tea.Cmd {
-	return func() tea.Msg {
-		_, err := model.db.BeginTx(
-			context.Background(),
-			&sql.TxOptions{ReadOnly: true, Isolation: 0},
-		)
-		if err != nil {
-			log.Fatal("db begin err")
-		}
+func (model Model) travel(direction string) (int64, string) {
+	_, err := model.db.BeginTx(
+		context.Background(),
+		&sql.TxOptions{ReadOnly: true, Isolation: 0},
+	)
+	if err != nil {
+		log.Fatal("db begin err")
+	}
 
-		var sql string
+	var sql string
+	if direction == "next" {
+		sql = "select id, query from history where id > (?) order by id asc limit 1;"
+	}
+
+	if direction == "previous" {
+		sql = "select id, query from history where id < (?) order by id desc limit 1;"
+	}
+
+	stmt, _ := model.db.PrepareContext(
+		context.Background(),
+		sql,
+	)
+
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	var query string
+
+	//nolint:varnamelen
+	var id int64
+
+	err = stmt.QueryRowContext(context.Background(), model.cursor).Scan(&id, &query)
+	if err != nil {
+		cursor := model.cursor
 		if direction == "next" {
-			sql = "select id, query from history where id > (?) order by id asc limit 1;"
+			cursor = math.MaxInt32
 		}
 
 		if direction == "previous" {
-			sql = "select id, query from history where id < (?) order by id desc limit 1;"
+			cursor = 0
 		}
 
-		stmt, _ := model.db.PrepareContext(
-			context.Background(),
-			sql,
-		)
+		return cursor, query
+	}
 
-		defer func() {
-			err := stmt.Close()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}()
+	log.Printf("history.Traveled id: %d  query: %s", id, query)
 
-		var query string
+	return id, query
+}
 
-		//nolint:varnamelen
-		var id int64
+func (model Model) travelCmd(direction string) tea.Cmd {
+	return func() tea.Msg {
+		cursor, query := model.travel(direction)
 
-		err = stmt.QueryRowContext(context.Background(), model.cursor).Scan(&id, &query)
-		if err != nil {
-			cursor := model.cursor
-			if direction == "next" {
-				cursor = math.MaxInt32
-			}
-
-			if direction == "previous" {
-				cursor = 0
-			}
-
-			return TraveledMsg{
-				cursor: cursor,
-				Value:  "",
-			}
-		}
-
-		log.Printf("history.Traveled id: %d  query: %s", id, query)
-
-		return TraveledMsg{
-			cursor: id,
-			Value:  query,
+		return traveledMsg{
+			cursor: cursor,
+			query:  query,
 		}
 	}
 }

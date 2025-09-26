@@ -58,7 +58,7 @@ func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
 			return model, nil
 		}
 
-		return model, dispatch(history.PushMsg{Entry: msg.Query})
+		return model, dispatch(history.PushMsg{Query: msg.Query})
 	}
 
 	model.History, cmd = model.History.Update(msg)
