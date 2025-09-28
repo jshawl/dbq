@@ -16,34 +16,34 @@ func TestSearch(t *testing.T) {
 
 		result := search.Search("brown clown", "ow")
 
-		if result[0].Start != 2 {
-			t.Fatalf("expected ow to Start at 2, got %d", result[0].Start)
+		if result[0].BufferStart != 2 {
+			t.Fatalf("expected ow to Start at 2, got %d", result[0].BufferStart)
 		}
 
-		if result[0].End != 4 {
-			t.Fatalf("expected ow to End at 4, got %d", result[0].End)
+		if result[0].BufferEnd != 4 {
+			t.Fatalf("expected ow to End at 4, got %d", result[0].BufferEnd)
 		}
 
-		if result[1].Start != 8 {
-			t.Fatalf("expected ow to Start at 8, got %d", result[1].Start)
+		if result[1].BufferStart != 8 {
+			t.Fatalf("expected ow to Start at 8, got %d", result[1].BufferStart)
 		}
 
-		if result[1].End != 10 {
-			t.Fatalf("expected ow to End at 10, got %d", result[1].End)
+		if result[1].BufferEnd != 10 {
+			t.Fatalf("expected ow to End at 10, got %d", result[1].BufferEnd)
 		}
 	})
 
 	t.Run("multiple lines", func(t *testing.T) {
 		t.Parallel()
 
-		result := search.Search("bro\nwn", "ow")
+		result := search.Search("br\nown", "ow")
 
-		if result[0].Start != 2 {
-			t.Fatalf("expected ow to Start at 2, got %d", result[0].Start)
+		if result[0].BufferStart != 3 {
+			t.Fatalf("expected ow to Start at 3, got %d", result[0].BufferStart)
 		}
 
-		if result[0].End != 5 {
-			t.Fatalf("expected ow to End at 5, got %d", result[0].End)
+		if result[0].BufferEnd != 5 {
+			t.Fatalf("expected ow to End at 5, got %d", result[0].BufferEnd)
 		}
 	})
 
@@ -79,18 +79,6 @@ func TestHighlight(t *testing.T) {
 		result := search.Search("brown\nclown", "ow")
 
 		highlighted := search.Highlight("brown\nclown", result)
-
-		if highlighted == "brown clown" {
-			t.Fatalf("failed to highlight, got %s", highlighted)
-		}
-	})
-
-	t.Run("two lines, ignores line breaks", func(t *testing.T) {
-		t.Parallel()
-
-		result := search.Search("bro\nwn", "ow")
-
-		highlighted := search.Highlight("bro\nwn", result)
 
 		if highlighted == "brown clown" {
 			t.Fatalf("failed to highlight, got %s", highlighted)

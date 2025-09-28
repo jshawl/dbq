@@ -8,8 +8,8 @@ import (
 )
 
 type SearchMatch struct {
-	Start int
-	End   int
+	BufferStart int
+	BufferEnd   int
 }
 
 func Search(str string, substring string) []SearchMatch {
@@ -20,24 +20,12 @@ func Search(str string, substring string) []SearchMatch {
 
 	matches := make([]SearchMatch, 0, estimatedMatches)
 
-	var builder strings.Builder
-
-	runes := []rune(substring)
-	for i, r := range runes {
-		builder.WriteString(regexp.QuoteMeta(string(r)))
-
-		if i != len(runes)-1 {
-			// optional line breaks in the substring
-			builder.WriteString("(?:\r\n|\r|\n)?")
-		}
-	}
-
-	re := regexp.MustCompile(builder.String())
+	re := regexp.MustCompile(substring)
 
 	for _, match := range re.FindAllStringIndex(str, -1) {
 		matches = append(matches, SearchMatch{
-			Start: match[0],
-			End:   match[1],
+			BufferStart: match[0],
+			BufferEnd:   match[1],
 		})
 	}
 
@@ -54,9 +42,9 @@ func Highlight(str string, matches []SearchMatch) string {
 		Background(lipgloss.Color("11"))
 
 	for _, match := range matches {
-		builder.WriteString(str[start:match.Start])
-		builder.WriteString(style.Render(str[match.Start:match.End]))
-		start = match.End
+		builder.WriteString(str[start:match.BufferStart])
+		builder.WriteString(style.Render(str[match.BufferStart:match.BufferEnd]))
+		start = match.BufferEnd
 	}
 
 	builder.WriteString(str[start:])
