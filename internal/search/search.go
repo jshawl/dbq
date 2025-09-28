@@ -8,8 +8,9 @@ import (
 )
 
 type SearchMatch struct {
-	BufferStart int
-	BufferEnd   int
+	BufferStart     int
+	BufferEnd       int
+	ScreenYPosition int
 }
 
 func Search(str string, substring string) []SearchMatch {
@@ -22,10 +23,13 @@ func Search(str string, substring string) []SearchMatch {
 
 	re := regexp.MustCompile(substring)
 
+	newLineRe := regexp.MustCompile("\n")
+
 	for _, match := range re.FindAllStringIndex(str, -1) {
 		matches = append(matches, SearchMatch{
-			BufferStart: match[0],
-			BufferEnd:   match[1],
+			BufferStart:     match[0],
+			BufferEnd:       match[1],
+			ScreenYPosition: len(newLineRe.FindAllStringIndex(str, match[0])),
 		})
 	}
 
