@@ -18,8 +18,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("keys - unfocused", func(t *testing.T) {
 		t.Parallel()
 
-		//nolint:exhaustruct
-		model := ui.QueryPaneModel{}.New()
+		model := ui.NewQueryPaneModel()
 		model = model.Blur()
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
 
@@ -31,8 +30,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("keys - enter", func(t *testing.T) {
 		t.Parallel()
 
-		//nolint:exhaustruct
-		model := ui.QueryPaneModel{}.New()
+		model := ui.NewQueryPaneModel()
 		want := "select * from posts limit 1;"
 		model.TextInput.SetValue(want)
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
@@ -46,8 +44,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("history.SetInputValueMsg", func(t *testing.T) {
 		t.Parallel()
 
-		//nolint:exhaustruct
-		model := ui.QueryPaneModel{}.New()
+		model := ui.NewQueryPaneModel()
 		_, cmd := model.Update(history.SetInputValueMsg{
 			Value: "select * from posts limit 1;",
 		})
@@ -60,8 +57,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("QueryResponseReceivedMsg - Err", func(t *testing.T) {
 		t.Parallel()
 
-		//nolint:exhaustruct
-		model := ui.QueryPaneModel{}.New()
+		model := ui.NewQueryPaneModel()
 		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: 0,
@@ -79,8 +75,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("QueryResponseReceivedMsg - Results", func(t *testing.T) {
 		t.Parallel()
 
-		//nolint:exhaustruct
-		model := ui.QueryPaneModel{}.New()
+		model := ui.NewQueryPaneModel()
 		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: time.Millisecond * 2345,
@@ -101,8 +96,7 @@ func TestQueryPane_Update(t *testing.T) {
 func TestQueryPane_View(t *testing.T) {
 	t.Parallel()
 
-	//nolint:exhaustruct
-	model := ui.QueryPaneModel{}.New()
+	model := ui.NewQueryPaneModel()
 
 	view := model.View()
 	if !strings.Contains(view, "> SELECT") {

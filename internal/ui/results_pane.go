@@ -67,7 +67,7 @@ func (model ResultsPaneModel) Resize(width int, height int, yposition int) Resul
 
 	height = height - footerHeight - yposition
 	if !model.ready {
-		model.viewport = model.New(width, height)
+		model.viewport = NewViewportModel(width, height)
 		model.viewport.YPosition = 0
 		model.ready = true
 	} else {
@@ -97,7 +97,7 @@ func (model ResultsPaneModel) Blur() ResultsPaneModel {
 	return model
 }
 
-func (model ResultsPaneModel) New(width int, height int) viewport.Model {
+func NewViewportModel(width int, height int) viewport.Model {
 	return viewport.New(width, height)
 }
 

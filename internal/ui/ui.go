@@ -44,7 +44,7 @@ func Run() {
 		}
 	}()
 
-	p := tea.NewProgram(InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(NewUIModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 	log.Println("ui.Run()")
 
@@ -56,15 +56,14 @@ func Run() {
 	}
 }
 
-func InitialModel() Model {
+func NewUIModel() Model {
 	return Model{
 		DB:      nil,
 		Err:     nil,
 		Results: db.QueryResult{},
 		//nolint:exhaustruct
 		ResultsPane: ResultsPaneModel{},
-		//nolint:exhaustruct
-		QueryPane: QueryPaneModel{}.New(),
+		QueryPane:   NewQueryPaneModel(),
 	}
 }
 
