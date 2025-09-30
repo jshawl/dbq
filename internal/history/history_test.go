@@ -35,7 +35,7 @@ func TestInit(t *testing.T) {
 			t.Fatal("expected db not to be created")
 		}
 
-		h := history.Init(path)
+		h := history.NewHistoryModel(path)
 
 		h.Cleanup()
 
@@ -49,8 +49,8 @@ func TestInit(t *testing.T) {
 
 		dir := setupHistoryStore(t)
 		path := dir + "/foo.db"
-		h1 := history.Init(path)
-		h2 := history.Init(path)
+		h1 := history.NewHistoryModel(path)
+		h2 := history.NewHistoryModel(path)
 
 		h1.Cleanup()
 		h2.Cleanup()
@@ -63,7 +63,7 @@ func setupHistoryModel(t *testing.T) history.Model {
 	dir := setupHistoryStore(t)
 	path := dir + "/foo.db"
 
-	model := history.Init(path)
+	model := history.NewHistoryModel(path)
 
 	t.Cleanup(func() {
 		defer model.Cleanup()

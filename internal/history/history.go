@@ -15,7 +15,7 @@ type Model struct {
 	db     *sql.DB
 }
 
-func Init(path string) Model {
+func NewHistoryModel(path string) Model {
 	database, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatal(err)

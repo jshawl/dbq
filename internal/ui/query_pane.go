@@ -17,18 +17,19 @@ type QueryExecMsg struct {
 	Value string
 }
 
-func (model QueryPaneModel) New() QueryPaneModel {
+func NewQueryPaneModel() QueryPaneModel {
 	input := textinput.New()
 	input.Placeholder = "SELECT * FROM users LIMIT 1;"
 	input.Focus()
 	input.CharLimit = 256
 	input.Width = 80
 	input.Cursor.SetMode(1)
-	model.TextInput = input
-	model.History = history.Init("/tmp/.dbqhistory")
-	model.focused = true
 
-	return model
+	return QueryPaneModel{
+		TextInput: input,
+		History:   history.NewHistoryModel("/tmp/.dbqhistory"),
+		focused:   true,
+	}
 }
 
 func (model QueryPaneModel) Update(msg tea.Msg) (QueryPaneModel, tea.Cmd) {
