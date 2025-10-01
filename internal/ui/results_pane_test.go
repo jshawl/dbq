@@ -7,9 +7,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/testutil"
 	"github.com/jshawl/dbq/internal/ui"
 )
 
@@ -73,37 +71,6 @@ func TestResultsPane_Update(t *testing.T) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
-
-	t.Run("slash IsSearching", func(t *testing.T) {
-		t.Parallel()
-
-		model := ui.NewResultsPaneModel()
-		model = model.Focus()
-
-		updatedModel, _ := model.Update(tea.KeyMsg{
-			Alt:   false,
-			Paste: false,
-			Type:  tea.KeyRunes,
-			Runes: []rune{'/'},
-		})
-
-		if !updatedModel.IsSearching {
-			t.Fatal("expected IsSearching to be true")
-		}
-	})
-
-	t.Run("esc IsSearching", func(t *testing.T) {
-		t.Parallel()
-
-		model := ui.NewResultsPaneModel()
-		model = model.Focus()
-
-		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyEscape))
-
-		if updatedModel.IsSearching {
-			t.Fatal("expected IsSearching to be false")
-		}
-	})
 }
 
 func TestResultsPane_View(t *testing.T) {
@@ -135,11 +102,11 @@ func TestResultsPane_View(t *testing.T) {
 		}
 	})
 
-	t.Run("IsSearching", func(t *testing.T) {
+	t.Run("search focused", func(t *testing.T) {
 		t.Parallel()
 
 		model := ui.NewResultsPaneModel()
-		model.IsSearching = true
+		model.Search = model.Search.Focus()
 
 		view := model.View()
 		if !strings.Contains(view, "/") {

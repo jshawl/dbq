@@ -3,8 +3,10 @@ package search_test
 import (
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/search"
+	"github.com/jshawl/dbq/internal/testutil"
 	"github.com/muesli/termenv"
 )
 
@@ -53,6 +55,41 @@ func TestSearch(t *testing.T) {
 		result := search.Search("a", "abc")
 		if len(result) != 0 {
 			t.Fatalf("expected no matches, got %d", len(result))
+		}
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	t.Parallel()
+
+	t.Run("slash IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := search.NewSearchModel()
+		model = model.Focus()
+
+		updatedModel, _ := model.Update(tea.KeyMsg{
+			Alt:   false,
+			Paste: false,
+			Type:  tea.KeyRunes,
+			Runes: []rune{'/'},
+		})
+
+		if !updatedModel.Focused() {
+			t.Fatal("expected IsSearching to be true")
+		}
+	})
+
+	t.Run("esc IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := search.NewSearchModel()
+		model = model.Focus()
+
+		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyEscape))
+
+		if updatedModel.Focused() {
+			t.Fatal("expected IsSearching to be false")
 		}
 	})
 }

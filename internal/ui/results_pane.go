@@ -14,16 +14,15 @@ import (
 )
 
 type ResultsPaneModel struct {
-	Height      int
-	Width       int
-	YPosition   int
-	Duration    time.Duration
-	Results     db.QueryResult
-	Err         error
-	IsSearching bool
+	Height    int
+	Width     int
+	YPosition int
+	Duration  time.Duration
+	Results   db.QueryResult
+	Err       error
+	Search    search.Model
 
 	ready    bool
-	search   search.Model
 	viewport viewport.Model
 	focused  bool
 }
@@ -36,17 +35,16 @@ type WindowSizeMsg struct {
 
 func NewResultsPaneModel() ResultsPaneModel {
 	return ResultsPaneModel{
-		Height:      0,
-		Width:       0,
-		YPosition:   0,
-		Duration:    0,
-		Results:     db.QueryResult{},
-		Err:         nil,
-		IsSearching: false,
+		Height:    0,
+		Width:     0,
+		YPosition: 0,
+		Duration:  0,
+		Results:   db.QueryResult{},
+		Err:       nil,
+		Search:    search.NewSearchModel(),
 
 		ready:    false,
 		focused:  false,
-		search:   search.NewSearchModel(),
 		viewport: NewViewportModel(0, 0),
 	}
 }
@@ -55,17 +53,6 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
-			return model, nil
-		}
-
-		switch msg.String() {
-		case "/":
-			model.IsSearching = true
-
-			return model, nil
-		case "esc":
-			model.IsSearching = false
-
 			return model, nil
 		}
 	case QueryResponseReceivedMsg:
@@ -87,6 +74,8 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
+	model.Search, cmd = model.Search.Update(msg)
+	cmds = append(cmds, cmd)
 	model.viewport, cmd = model.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -162,8 +151,8 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
-	if model.IsSearching {
-		return model.search.View()
+	if model.Search.Focused() {
+		return model.Search.View()
 	}
 
 	if model.Duration.Seconds() == 0 {
