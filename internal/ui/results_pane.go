@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/search"
 )
 
 type ResultsPaneModel struct {
@@ -22,6 +23,7 @@ type ResultsPaneModel struct {
 	IsSearching bool
 
 	ready    bool
+	search   search.Model
 	viewport viewport.Model
 	focused  bool
 }
@@ -30,6 +32,23 @@ type WindowSizeMsg struct {
 	Height    int
 	Width     int
 	YPosition int
+}
+
+func NewResultsPaneModel() ResultsPaneModel {
+	return ResultsPaneModel{
+		Height:      0,
+		Width:       0,
+		YPosition:   0,
+		Duration:    0,
+		Results:     db.QueryResult{},
+		Err:         nil,
+		IsSearching: false,
+
+		ready:    false,
+		focused:  false,
+		search:   search.NewSearchModel(),
+		viewport: NewViewportModel(0, 0),
+	}
 }
 
 func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
@@ -144,7 +163,7 @@ func (model ResultsPaneModel) ResultsView() string {
 
 func (model ResultsPaneModel) footerView() string {
 	if model.IsSearching {
-		return "/" // + text input view
+		return model.search.View()
 	}
 
 	if model.Duration.Seconds() == 0 {
