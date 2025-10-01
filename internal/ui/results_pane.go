@@ -13,12 +13,13 @@ import (
 )
 
 type ResultsPaneModel struct {
-	Height    int
-	Width     int
-	YPosition int
-	Duration  time.Duration
-	Results   db.QueryResult
-	Err       error
+	Height      int
+	Width       int
+	YPosition   int
+	Duration    time.Duration
+	Results     db.QueryResult
+	Err         error
+	IsSearching bool
 
 	ready    bool
 	viewport viewport.Model
@@ -35,6 +36,17 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if !model.focused {
+			return model, nil
+		}
+
+		switch msg.String() {
+		case "/":
+			model.IsSearching = true
+
+			return model, nil
+		case "esc":
+			model.IsSearching = false
+
 			return model, nil
 		}
 	case QueryResponseReceivedMsg:
@@ -131,6 +143,10 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
+	if model.IsSearching {
+		return "/" // + text input view
+	}
+
 	if model.Duration.Seconds() == 0 {
 		return ""
 	}

@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/testutil"
 	"github.com/jshawl/dbq/internal/ui"
 )
 
@@ -18,12 +20,13 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Height:    0,
-			Width:     0,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Duration:    0,
+			Err:         nil,
+			Height:      0,
+			IsSearching: false,
+			Results:     db.QueryResult{},
+			Width:       0,
+			YPosition:   0,
 		}
 		updatedModel, _ := model.Update(ui.WindowSizeMsg{
 			Height:    42,
@@ -46,12 +49,13 @@ func TestResultsPane_Update(t *testing.T) {
 
 		userID := 789
 		model := ui.ResultsPaneModel{
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     db.QueryResult{},
+			Width:       80,
+			YPosition:   0,
 		}
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
@@ -72,12 +76,13 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     db.QueryResult{},
+			Width:       80,
+			YPosition:   0,
 		}
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
@@ -92,6 +97,53 @@ func TestResultsPane_Update(t *testing.T) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
+
+	t.Run("slash IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.ResultsPaneModel{
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     db.QueryResult{},
+			Width:       80,
+			YPosition:   0,
+		}
+		model = model.Focus()
+
+		updatedModel, _ := model.Update(tea.KeyMsg{
+			Alt:   false,
+			Paste: false,
+			Type:  tea.KeyRunes,
+			Runes: []rune{'/'},
+		})
+
+		if !updatedModel.IsSearching {
+			t.Fatal("expected IsSearching to be true")
+		}
+	})
+
+	t.Run("esc IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.ResultsPaneModel{
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: true,
+			Results:     db.QueryResult{},
+			Width:       80,
+			YPosition:   0,
+		}
+		model = model.Focus()
+
+		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyEscape))
+
+		if updatedModel.IsSearching {
+			t.Fatal("expected IsSearching to be false")
+		}
+	})
 }
 
 func TestResultsPane_View(t *testing.T) {
@@ -101,12 +153,13 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  time.Millisecond * 2345,
-			Err:       nil,
-			Results:   makeResults(123),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    time.Millisecond * 2345,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     makeResults(123),
+			Width:       80,
+			YPosition:   0,
 		}
 
 		view := model.View()
@@ -119,17 +172,37 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  time.Millisecond * 2345,
-			Err:       nil,
-			Results:   makeResults(123, 456),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    time.Millisecond * 2345,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     makeResults(123, 456),
+			Width:       80,
+			YPosition:   0,
 		}
 
 		view := model.View()
 		if !strings.Contains(view, "(2 rows in 2.345s)") {
 			t.Fatalf("expected duration to be visible\n %s", view)
+		}
+	})
+
+	t.Run("IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.ResultsPaneModel{
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: true,
+			Results:     makeResults(123, 456),
+			Width:       80,
+			YPosition:   0,
+		}
+
+		view := model.View()
+		if !strings.Contains(view, "/") {
+			t.Fatalf("expected searching to show slash \n %s", view)
 		}
 	})
 }
@@ -141,12 +214,13 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  0,
-			Err:       nil,
-			Results:   makeResults(0, 666),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    0,
+			Err:         nil,
+			Height:      80,
+			IsSearching: false,
+			Results:     makeResults(0, 666),
+			Width:       80,
+			YPosition:   0,
 		}
 
 		view := model.ResultsView()
@@ -164,12 +238,13 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  0,
-			Err:       errSQL,
-			Results:   db.QueryResult{},
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    0,
+			Err:         errSQL,
+			Height:      80,
+			IsSearching: false,
+			Results:     db.QueryResult{},
+			Width:       80,
+			YPosition:   0,
 		}
 
 		view := model.ResultsView()
@@ -183,12 +258,13 @@ func TestResultsPane_Resize(t *testing.T) {
 	t.Parallel()
 
 	model := ui.ResultsPaneModel{
-		Duration:  0,
-		Err:       errSQL,
-		Results:   db.QueryResult{},
-		Height:    80,
-		Width:     80,
-		YPosition: 0,
+		Duration:    0,
+		Err:         errSQL,
+		Height:      80,
+		IsSearching: false,
+		Results:     db.QueryResult{},
+		Width:       80,
+		YPosition:   0,
 	}
 
 	model = model.Resize(20, 30, 1)
