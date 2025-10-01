@@ -38,6 +38,17 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		if !model.focused {
 			return model, nil
 		}
+
+		switch msg.String() {
+		case "/":
+			model.IsSearching = true
+
+			return model, nil
+		case "esc":
+			model.IsSearching = false
+
+			return model, nil
+		}
 	case QueryResponseReceivedMsg:
 		model.Duration = msg.Duration
 		model.Err = msg.Err
