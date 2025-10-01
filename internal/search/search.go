@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -12,14 +13,47 @@ type SearchMatch struct {
 	BufferEnd   int
 }
 
-type Model struct{}
+type Model struct {
+	focused bool
+}
 
 func NewSearchModel() Model {
-	return Model{}
+	return Model{
+		focused: false,
+	}
 }
 
 func (model Model) View() string {
 	return "/" // + input view
+}
+
+func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	//nolint:gocritic
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "/":
+			model.focused = true
+
+			return model, nil
+		case "esc":
+			model.focused = false
+
+			return model, nil
+		}
+	}
+
+	return model, nil
+}
+
+func (model Model) Focus() Model {
+	model.focused = true
+
+	return model
+}
+
+func (model Model) Focused() bool {
+	return model.focused
 }
 
 func Search(str string, substring string) []SearchMatch {
