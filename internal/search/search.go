@@ -51,6 +51,7 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return model, nil
 		case "esc":
 			model.focused = false
+			// TODO dispatch an exit message so the viewport can remove the highlight
 
 			return model, nil
 		case "enter":

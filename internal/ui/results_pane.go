@@ -79,6 +79,7 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		matches := search.Search(model.ResultsView(), value)
 		highlit := search.Highlight(model.ResultsView(), matches)
 		model.viewport.SetContent(highlit)
+
 		return model, nil
 	}
 
