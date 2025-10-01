@@ -12,6 +12,16 @@ type SearchMatch struct {
 	BufferEnd   int
 }
 
+type Model struct{}
+
+func NewSearchModel() Model {
+	return Model{}
+}
+
+func (model Model) View() string {
+	return "/" // + input view
+}
+
 func Search(str string, substring string) []SearchMatch {
 	estimatedMatches := len(str) / len(substring)
 	if estimatedMatches < 1 {

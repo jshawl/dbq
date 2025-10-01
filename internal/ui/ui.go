@@ -58,11 +58,10 @@ func Run() {
 
 func NewUIModel() Model {
 	return Model{
-		DB:      nil,
-		Err:     nil,
-		Results: db.QueryResult{},
-		//nolint:exhaustruct
-		ResultsPane: ResultsPaneModel{},
+		DB:          nil,
+		Err:         nil,
+		Results:     db.QueryResult{},
+		ResultsPane: NewResultsPaneModel(),
 		QueryPane:   NewQueryPaneModel(),
 	}
 }
