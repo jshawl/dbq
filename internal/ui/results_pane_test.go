@@ -19,15 +19,7 @@ func TestResultsPane_Update(t *testing.T) {
 	t.Run("WindowSizeMsg", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      0,
-			IsSearching: false,
-			Results:     db.QueryResult{},
-			Width:       0,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
 		updatedModel, _ := model.Update(ui.WindowSizeMsg{
 			Height:    42,
 			Width:     37,
@@ -48,15 +40,7 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		userID := 789
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     db.QueryResult{},
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: 0,
@@ -75,15 +59,7 @@ func TestResultsPane_Update(t *testing.T) {
 	t.Run("QueryResponseReceivedMsg - err", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     db.QueryResult{},
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: 0,
@@ -101,15 +77,7 @@ func TestResultsPane_Update(t *testing.T) {
 	t.Run("slash IsSearching", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     db.QueryResult{},
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
 		model = model.Focus()
 
 		updatedModel, _ := model.Update(tea.KeyMsg{
@@ -127,15 +95,7 @@ func TestResultsPane_Update(t *testing.T) {
 	t.Run("esc IsSearching", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: true,
-			Results:     db.QueryResult{},
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
 		model = model.Focus()
 
 		updatedModel, _ := model.Update(testutil.MakeKeyMsg(tea.KeyEscape))
@@ -152,15 +112,9 @@ func TestResultsPane_View(t *testing.T) {
 	t.Run("duration with 1 row", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    time.Millisecond * 2345,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     makeResults(123),
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
+		model.Duration = time.Millisecond * 2345
+		model.Results = makeResults(123)
 
 		view := model.View()
 		if !strings.Contains(view, "(1 row in 2.345s)") {
@@ -171,15 +125,9 @@ func TestResultsPane_View(t *testing.T) {
 	t.Run("duration with 2 rows", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    time.Millisecond * 2345,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     makeResults(123, 456),
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
+		model.Duration = time.Millisecond * 2345
+		model.Results = makeResults(123, 456)
 
 		view := model.View()
 		if !strings.Contains(view, "(2 rows in 2.345s)") {
@@ -190,15 +138,8 @@ func TestResultsPane_View(t *testing.T) {
 	t.Run("IsSearching", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: true,
-			Results:     makeResults(123, 456),
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
+		model.IsSearching = true
 
 		view := model.View()
 		if !strings.Contains(view, "/") {
@@ -213,15 +154,8 @@ func TestResultsPane_ResultsView(t *testing.T) {
 	t.Run("results", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         nil,
-			Height:      80,
-			IsSearching: false,
-			Results:     makeResults(0, 666),
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
+		model.Results = makeResults(666)
 
 		view := model.ResultsView()
 
@@ -237,15 +171,8 @@ func TestResultsPane_ResultsView(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.ResultsPaneModel{
-			Duration:    0,
-			Err:         errSQL,
-			Height:      80,
-			IsSearching: false,
-			Results:     db.QueryResult{},
-			Width:       80,
-			YPosition:   0,
-		}
+		model := ui.NewResultsPaneModel()
+		model.Err = errSQL
 
 		view := model.ResultsView()
 		if !strings.Contains(view, "sql error") {
@@ -257,15 +184,7 @@ func TestResultsPane_ResultsView(t *testing.T) {
 func TestResultsPane_Resize(t *testing.T) {
 	t.Parallel()
 
-	model := ui.ResultsPaneModel{
-		Duration:    0,
-		Err:         errSQL,
-		Height:      80,
-		IsSearching: false,
-		Results:     db.QueryResult{},
-		Width:       80,
-		YPosition:   0,
-	}
+	model := ui.NewResultsPaneModel()
 
 	model = model.Resize(20, 30, 1)
 	if model.Width != 20 {
