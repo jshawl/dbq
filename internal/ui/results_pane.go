@@ -74,6 +74,12 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model = model.Resize(msg.Width, msg.Height, msg.YPosition)
 
 		return model, nil
+	case search.SearchMsg:
+		value := msg.Value
+		matches := search.Search(model.ResultsView(), value)
+		highlit := search.Highlight(model.ResultsView(), matches)
+		model.viewport.SetContent(highlit)
+		return model, nil
 	}
 
 	var (

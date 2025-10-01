@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -13,21 +14,33 @@ type SearchMatch struct {
 	BufferEnd   int
 }
 
+type SearchMsg struct {
+	Value string
+}
+
 type Model struct {
-	focused bool
+	focused   bool
+	textInput textinput.Model
 }
 
 func NewSearchModel() Model {
+	textInput := textinput.New()
+	textInput.Prompt = "/"
+	textInput.Focus()
+	textInput.Cursor.SetMode(1)
+
 	return Model{
-		focused: false,
+		focused:   false,
+		textInput: textInput,
 	}
 }
 
 func (model Model) View() string {
-	return "/" // + input view
+	return model.textInput.View()
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	var cmd tea.Cmd
 	//nolint:gocritic
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -40,10 +53,23 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			model.focused = false
 
 			return model, nil
+		case "enter":
+			value := model.textInput.Value()
+			model.textInput.Blur()
+			// TODO focused == false allows scrolling the viewport,
+			// but then the search term is no longer visible
+			// model.focused = false
+			return model, func() tea.Msg {
+				return SearchMsg{
+					Value: value,
+				}
+			}
 		}
 	}
 
-	return model, nil
+	model.textInput, cmd = model.textInput.Update(msg)
+
+	return model, cmd
 }
 
 func (model Model) Focus() Model {
