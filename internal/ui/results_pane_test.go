@@ -18,12 +18,13 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Height:    0,
-			Width:     0,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Height:      0,
+			Width:       0,
+			YPosition:   0,
+			Duration:    0,
+			Err:         nil,
+			Results:     db.QueryResult{},
+			IsSearching: false,
 		}
 		updatedModel, _ := model.Update(ui.WindowSizeMsg{
 			Height:    42,
@@ -46,12 +47,13 @@ func TestResultsPane_Update(t *testing.T) {
 
 		userID := 789
 		model := ui.ResultsPaneModel{
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			Duration:    0,
+			Err:         nil,
+			Results:     db.QueryResult{},
+			IsSearching: false,
 		}
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
@@ -72,12 +74,13 @@ func TestResultsPane_Update(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
-			Duration:  0,
-			Err:       nil,
-			Results:   db.QueryResult{},
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			Duration:    0,
+			Err:         nil,
+			Results:     db.QueryResult{},
+			IsSearching: false,
 		}
 		updatedModel, _ := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
@@ -101,12 +104,13 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  time.Millisecond * 2345,
-			Err:       nil,
-			Results:   makeResults(123),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    time.Millisecond * 2345,
+			Err:         nil,
+			Results:     makeResults(123),
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			IsSearching: false,
 		}
 
 		view := model.View()
@@ -119,17 +123,37 @@ func TestResultsPane_View(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  time.Millisecond * 2345,
-			Err:       nil,
-			Results:   makeResults(123, 456),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    time.Millisecond * 2345,
+			Err:         nil,
+			Results:     makeResults(123, 456),
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			IsSearching: false,
 		}
 
 		view := model.View()
 		if !strings.Contains(view, "(2 rows in 2.345s)") {
 			t.Fatalf("expected duration to be visible\n %s", view)
+		}
+	})
+
+	t.Run("IsSearching", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.ResultsPaneModel{
+			Duration:    0,
+			Err:         nil,
+			Results:     makeResults(123, 456),
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			IsSearching: true,
+		}
+
+		view := model.View()
+		if !strings.Contains(view, "/") {
+			t.Fatalf("expected searching to show slash \n %s", view)
 		}
 	})
 }
@@ -141,12 +165,13 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  0,
-			Err:       nil,
-			Results:   makeResults(0, 666),
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    0,
+			Err:         nil,
+			Results:     makeResults(0, 666),
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			IsSearching: false,
 		}
 
 		view := model.ResultsView()
@@ -164,12 +189,13 @@ func TestResultsPane_ResultsView(t *testing.T) {
 		t.Parallel()
 
 		model := ui.ResultsPaneModel{
-			Duration:  0,
-			Err:       errSQL,
-			Results:   db.QueryResult{},
-			Height:    80,
-			Width:     80,
-			YPosition: 0,
+			Duration:    0,
+			Err:         errSQL,
+			Results:     db.QueryResult{},
+			Height:      80,
+			Width:       80,
+			YPosition:   0,
+			IsSearching: false,
 		}
 
 		view := model.ResultsView()
@@ -183,12 +209,13 @@ func TestResultsPane_Resize(t *testing.T) {
 	t.Parallel()
 
 	model := ui.ResultsPaneModel{
-		Duration:  0,
-		Err:       errSQL,
-		Results:   db.QueryResult{},
-		Height:    80,
-		Width:     80,
-		YPosition: 0,
+		Duration:    0,
+		Err:         errSQL,
+		Results:     db.QueryResult{},
+		Height:      80,
+		Width:       80,
+		YPosition:   0,
+		IsSearching: false,
 	}
 
 	model = model.Resize(20, 30, 1)

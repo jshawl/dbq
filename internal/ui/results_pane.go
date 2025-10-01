@@ -13,12 +13,13 @@ import (
 )
 
 type ResultsPaneModel struct {
-	Height    int
-	Width     int
-	YPosition int
-	Duration  time.Duration
-	Results   db.QueryResult
-	Err       error
+	Height      int
+	Width       int
+	YPosition   int
+	Duration    time.Duration
+	Results     db.QueryResult
+	Err         error
+	IsSearching bool
 
 	ready    bool
 	viewport viewport.Model
@@ -131,6 +132,10 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
+	if model.IsSearching {
+		return "/" // + text input view
+	}
+
 	if model.Duration.Seconds() == 0 {
 		return ""
 	}
