@@ -50,10 +50,7 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "/":
-			model.focused = true
-			model.textInput.Focus()
-
-			return model, nil
+			return model.Focus(), nil
 		case "esc":
 			model.focused = false
 			model.textInput.SetValue("")
@@ -83,6 +80,7 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (model Model) Focus() Model {
 	model.focused = true
+	model.textInput.Focus()
 
 	return model
 }

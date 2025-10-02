@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/search"
 	"github.com/jshawl/dbq/internal/ui"
 )
 
@@ -69,6 +70,20 @@ func TestResultsPane_Update(t *testing.T) {
 
 		if !errors.Is(updatedModel.Err, errSQL) {
 			t.Fatal("expected query msg err to update model")
+		}
+	})
+
+	t.Run("SearchMsg", func(t *testing.T) {
+		t.Parallel()
+
+		model := ui.NewResultsPaneModel()
+		model.Search = model.Search.Focus()
+		_, cmd := model.Update(search.SearchMsg{
+			Value: "regexp",
+		})
+
+		if cmd != nil {
+			t.Fatal("expect cmd to be nil (todo check viewport change for highlight)")
 		}
 	})
 }
