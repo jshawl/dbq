@@ -18,7 +18,10 @@ type SearchMsg struct {
 	Value string
 }
 
+type SearchClearMsg struct{}
+
 type Model struct {
+	Value     string
 	focused   bool
 	textInput textinput.Model
 }
@@ -30,6 +33,7 @@ func NewSearchModel() Model {
 	textInput.Cursor.SetMode(1)
 
 	return Model{
+		Value:     textInput.Value(),
 		focused:   false,
 		textInput: textInput,
 	}
@@ -47,19 +51,23 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch msg.String() {
 		case "/":
 			model.focused = true
+			model.textInput.Focus()
 
 			return model, nil
 		case "esc":
 			model.focused = false
-			// TODO dispatch an exit message so the viewport can remove the highlight
+			model.textInput.SetValue("")
+			model.Value = ""
 
-			return model, nil
+			return model, func() tea.Msg {
+				return SearchClearMsg{}
+			}
 		case "enter":
 			value := model.textInput.Value()
+			model.Value = value
 			model.textInput.Blur()
-			// TODO focused == false allows scrolling the viewport,
-			// but then the search term is no longer visible
-			// model.focused = false
+			model.focused = false
+
 			return model, func() tea.Msg {
 				return SearchMsg{
 					Value: value,

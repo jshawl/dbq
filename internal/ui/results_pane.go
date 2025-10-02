@@ -81,6 +81,10 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model.viewport.SetContent(highlit)
 
 		return model, nil
+	case search.SearchClearMsg:
+		model.viewport.SetContent(model.ResultsView())
+
+		return model, nil
 	}
 
 	var (
@@ -165,7 +169,7 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
-	if model.Search.Focused() {
+	if model.Search.Focused() || model.Search.Value != "" {
 		return model.Search.View()
 	}
 
