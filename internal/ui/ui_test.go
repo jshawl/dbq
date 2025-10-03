@@ -24,11 +24,16 @@ func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 	return typed
 }
 
+func setupUIModel(t *testing.T) ui.Model {
+	t.Helper()
+
+	return ui.NewUIModel("postgres://admin:password@localhost:5432/dbq_test")
+}
+
 func setupDatabaseModel(t *testing.T) ui.Model {
 	t.Helper()
 
-	model := ui.NewUIModel()
-	// model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
+	model := setupUIModel(t)
 
 	cmd := model.Init()
 	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
@@ -70,7 +75,7 @@ func makeResults(userID int, userIDs ...int) db.QueryResult {
 func TestInit(t *testing.T) {
 	t.Parallel()
 
-	model := ui.NewUIModel()
+	model := setupUIModel(t)
 	cmd := model.Init()
 
 	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,6 +18,8 @@ type Model struct {
 	DB          *db.DB
 	ResultsPane ResultsPaneModel
 	QueryPane   QueryPaneModel
+
+	databaseUrl string
 }
 
 type DBMsg struct {
@@ -35,6 +38,11 @@ type QueryResponseReceivedMsg struct {
 }
 
 func Run() {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL unset")
+	}
+
 	f, _ := tea.LogToFile("debug.log", "debug")
 
 	defer func() {
@@ -44,11 +52,15 @@ func Run() {
 		}
 	}()
 
-	p := tea.NewProgram(NewUIModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	program := tea.NewProgram(NewUIModel(
+		os.Getenv("DATABASE_URL")),
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
 
 	log.Println("ui.Run()")
 
-	_, err := p.Run()
+	_, err := program.Run()
 	if err != nil {
 		defer func() {
 			log.Fatal(err)
@@ -56,20 +68,22 @@ func Run() {
 	}
 }
 
-func NewUIModel() Model {
+func NewUIModel(databaseUrl string) Model {
 	return Model{
 		DB:          nil,
 		Err:         nil,
 		Results:     db.QueryResult{},
 		ResultsPane: NewResultsPaneModel(),
 		QueryPane:   NewQueryPaneModel(),
+
+		databaseUrl: databaseUrl,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		pgdb, _ := db.NewPostgresDB(ctx, "postgres://admin:password@localhost:5432/dbq_test")
+		pgdb, _ := db.NewPostgresDB(ctx, m.databaseUrl)
 		db := db.NewDB(pgdb)
 
 		return DBMsg{
