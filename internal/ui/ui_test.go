@@ -27,7 +27,7 @@ func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 func setupDatabaseModel(t *testing.T) ui.Model {
 	t.Helper()
 
-	model := ui.NewUIModel()
+	model := ui.NewUIModel("postgres://admin:password@localhost:5432/dbq_test")
 	// model.TextInput.SetValue("SELECT * FROM users LIMIT 1;")
 
 	cmd := model.Init()
@@ -70,7 +70,7 @@ func makeResults(userID int, userIDs ...int) db.QueryResult {
 func TestInit(t *testing.T) {
 	t.Parallel()
 
-	model := ui.NewUIModel()
+	model := ui.NewUIModel("postgres://admin:password@localhost:5432/dbq_test")
 	cmd := model.Init()
 
 	msg := testutil.AssertMsgType[ui.DBMsg](t, cmd)
