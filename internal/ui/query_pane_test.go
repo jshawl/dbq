@@ -12,13 +12,19 @@ import (
 	"github.com/jshawl/dbq/internal/ui"
 )
 
+func setupQueryPaneModel(t *testing.T) ui.QueryPaneModel {
+	t.Helper()
+
+	return ui.NewQueryPaneModel("/tmp")
+}
+
 func TestQueryPane_Update(t *testing.T) {
 	t.Parallel()
 
 	t.Run("keys - unfocused", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.NewQueryPaneModel()
+		model := setupQueryPaneModel(t)
 		model = model.Blur()
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
 
@@ -30,7 +36,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("keys - enter", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.NewQueryPaneModel()
+		model := setupQueryPaneModel(t)
 		want := "select * from posts limit 1;"
 		model.TextInput.SetValue(want)
 		_, cmd := model.Update(testutil.MakeKeyMsg(tea.KeyEnter))
@@ -44,7 +50,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("history.SetInputValueMsg", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.NewQueryPaneModel()
+		model := setupQueryPaneModel(t)
 		_, cmd := model.Update(history.SetInputValueMsg{
 			Value: "select * from posts limit 1;",
 		})
@@ -57,7 +63,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("QueryResponseReceivedMsg - Err", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.NewQueryPaneModel()
+		model := setupQueryPaneModel(t)
 		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: 0,
@@ -75,7 +81,7 @@ func TestQueryPane_Update(t *testing.T) {
 	t.Run("QueryResponseReceivedMsg - Results", func(t *testing.T) {
 		t.Parallel()
 
-		model := ui.NewQueryPaneModel()
+		model := setupQueryPaneModel(t)
 		_, cmd := model.Update(ui.QueryResponseReceivedMsg{
 			QueryMsg: ui.QueryMsg{
 				Duration: time.Millisecond * 2345,
@@ -96,7 +102,7 @@ func TestQueryPane_Update(t *testing.T) {
 func TestQueryPane_View(t *testing.T) {
 	t.Parallel()
 
-	model := ui.NewQueryPaneModel()
+	model := setupQueryPaneModel(t)
 
 	view := model.View()
 	if !strings.Contains(view, "> SELECT") {

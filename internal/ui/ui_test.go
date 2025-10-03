@@ -27,7 +27,7 @@ func assertModelType[T tea.Model](t *testing.T, model tea.Model) T {
 func setupUIModel(t *testing.T) ui.Model {
 	t.Helper()
 
-	return ui.NewUIModel("postgres://admin:password@localhost:5432/dbq_test")
+	return ui.NewUIModel("postgres://admin:password@localhost:5432/dbq_test", "/tmp")
 }
 
 func setupDatabaseModel(t *testing.T) ui.Model {
