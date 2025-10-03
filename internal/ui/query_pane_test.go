@@ -15,7 +15,7 @@ import (
 func setupQueryPaneModel(t *testing.T) ui.QueryPaneModel {
 	t.Helper()
 
-	return ui.NewQueryPaneModel("/tmp")
+	return ui.NewQueryPaneModel(t.TempDir())
 }
 
 func TestQueryPane_Update(t *testing.T) {
