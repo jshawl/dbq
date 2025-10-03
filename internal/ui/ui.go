@@ -43,24 +43,38 @@ func Run() {
 		log.Fatal("DATABASE_URL unset")
 	}
 
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	configPath := homeDir + "/.dbq"
+
+	const configPathPerms = 0o750
+
+	err = os.MkdirAll(configPath, configPathPerms)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	f, _ := tea.LogToFile("debug.log", "debug")
 
 	defer func() {
 		err := f.Close()
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 
-	program := tea.NewProgram(NewUIModel(
-		os.Getenv("DATABASE_URL")),
+	program := tea.NewProgram(
+		NewUIModel(os.Getenv("DATABASE_URL"), configPath),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
 
 	log.Println("ui.Run()")
 
-	_, err := program.Run()
+	_, err = program.Run()
 	if err != nil {
 		defer func() {
 			log.Fatal(err)
@@ -68,13 +82,13 @@ func Run() {
 	}
 }
 
-func NewUIModel(databaseUrl string) Model {
+func NewUIModel(databaseUrl string, configPath string) Model {
 	return Model{
 		DB:          nil,
 		Err:         nil,
 		Results:     db.QueryResult{},
 		ResultsPane: NewResultsPaneModel(),
-		QueryPane:   NewQueryPaneModel(),
+		QueryPane:   NewQueryPaneModel(configPath),
 
 		databaseUrl: databaseUrl,
 	}

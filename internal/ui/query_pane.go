@@ -17,7 +17,7 @@ type QueryExecMsg struct {
 	Value string
 }
 
-func NewQueryPaneModel() QueryPaneModel {
+func NewQueryPaneModel(configPath string) QueryPaneModel {
 	input := textinput.New()
 	input.Placeholder = "SELECT * FROM users LIMIT 1;"
 	input.Focus()
@@ -27,7 +27,7 @@ func NewQueryPaneModel() QueryPaneModel {
 
 	return QueryPaneModel{
 		TextInput: input,
-		History:   history.NewHistoryModel("/tmp/.dbqhistory"),
+		History:   history.NewHistoryModel(configPath + "/history.sqlite3"),
 		focused:   true,
 	}
 }
