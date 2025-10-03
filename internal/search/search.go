@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -13,41 +14,73 @@ type SearchMatch struct {
 	BufferEnd   int
 }
 
+type SearchMsg struct {
+	Value string
+}
+
+type SearchClearMsg struct{}
+
 type Model struct {
-	focused bool
+	Value     string
+	focused   bool
+	textInput textinput.Model
 }
 
 func NewSearchModel() Model {
+	textInput := textinput.New()
+	textInput.Prompt = "/"
+	textInput.Focus()
+	textInput.Cursor.SetMode(1)
+
 	return Model{
-		focused: false,
+		Value:     textInput.Value(),
+		focused:   false,
+		textInput: textInput,
 	}
 }
 
 func (model Model) View() string {
-	return "/" // + input view
+	return model.textInput.View()
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	var cmd tea.Cmd
 	//nolint:gocritic
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "/":
-			model.focused = true
-
-			return model, nil
+			return model.Focus(), nil
 		case "esc":
 			model.focused = false
+			model.textInput.SetValue("")
+			model.Value = ""
 
-			return model, nil
+			return model, func() tea.Msg {
+				return SearchClearMsg{}
+			}
+		case "enter":
+			value := model.textInput.Value()
+			model.Value = value
+			model.textInput.Blur()
+			model.focused = false
+
+			return model, func() tea.Msg {
+				return SearchMsg{
+					Value: value,
+				}
+			}
 		}
 	}
 
-	return model, nil
+	model.textInput, cmd = model.textInput.Update(msg)
+
+	return model, cmd
 }
 
 func (model Model) Focus() Model {
 	model.focused = true
+	model.textInput.Focus()
 
 	return model
 }
