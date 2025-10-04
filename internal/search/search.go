@@ -114,13 +114,17 @@ func Highlight(str string, matches []SearchMatch) string {
 
 	start := 0
 
-	style := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#000000")).
-		Background(lipgloss.Color("11"))
-
-	for _, match := range matches {
+	for matchIndex, match := range matches {
 		builder.WriteString(str[start:match.BufferStart])
-		builder.WriteString(style.Render(str[match.BufferStart:match.BufferEnd]))
+
+		if matchIndex == 0 {
+			firstCharacter := WithBlackBackground(str[match.BufferStart : match.BufferStart+1])
+			rest := WithYellowBackground(str[match.BufferStart+1 : match.BufferEnd])
+			builder.WriteString(firstCharacter + rest)
+		} else {
+			builder.WriteString(WithYellowBackground(str[match.BufferStart:match.BufferEnd]))
+		}
+
 		start = match.BufferEnd
 	}
 
@@ -128,4 +132,16 @@ func Highlight(str string, matches []SearchMatch) string {
 	result := builder.String()
 
 	return result
+}
+
+func WithYellowBackground(str string) string {
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#000000")).
+		Background(lipgloss.Color("11")).Render(str)
+}
+
+func WithBlackBackground(str string) string {
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#ffffff")).
+		Background(lipgloss.Color("#000000")).Render(str)
 }

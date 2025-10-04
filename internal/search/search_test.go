@@ -98,26 +98,32 @@ func TestHighlight(t *testing.T) {
 	t.Parallel()
 
 	lipgloss.SetColorProfile(termenv.TrueColor)
-	t.Run("one line, two matches", func(t *testing.T) {
+
+	t.Run("marks the first match", func(t *testing.T) {
 		t.Parallel()
 
-		result := search.Search("green queen", "ee")
+		result := search.Search("abcd", "bc")
+		highlighted := search.Highlight("abcd", result)
 
-		highlighted := search.Highlight("green queen", result)
-
-		if highlighted == "green queen" {
-			t.Fatalf("failed to highlight, got %s", highlighted)
+		if highlighted != "a"+search.WithBlackBackground("b")+search.WithYellowBackground("c")+"d" {
+			t.Fatalf("expected first character to be marked, got %s", highlighted)
 		}
 	})
 
-	t.Run("two lines, two matches", func(t *testing.T) {
+	t.Run("two matches only marks the first highlight", func(t *testing.T) {
 		t.Parallel()
 
-		result := search.Search("brown\nclown", "ow")
+		result := search.Search("brown clown", "ow")
 
-		highlighted := search.Highlight("brown\nclown", result)
+		highlighted := search.Highlight("brown clown", result)
 
-		if highlighted == "brown clown" {
+		expected := "br" +
+			search.WithBlackBackground("o") +
+			search.WithYellowBackground("w") +
+			"n cl" +
+			search.WithYellowBackground("ow") +
+			"n"
+		if highlighted != expected {
 			t.Fatalf("failed to highlight, got %s", highlighted)
 		}
 	})
