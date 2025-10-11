@@ -6,46 +6,31 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/search"
+	"github.com/jshawl/dbq/internal/searchableviewport"
 )
 
 type ResultsPaneModel struct {
-	Height    int
-	Width     int
-	YPosition int
-	Duration  time.Duration
-	Results   db.QueryResult
-	Err       error
-	Search    search.Model
+	Duration           time.Duration
+	Results            db.QueryResult
+	Err                error
+	Search             search.Model
+	SearchableViewport searchableviewport.Model
 
-	ready    bool
-	viewport viewport.Model
-	focused  bool
-}
-
-type WindowSizeMsg struct {
-	Height    int
-	Width     int
-	YPosition int
+	focused bool
 }
 
 func NewResultsPaneModel() ResultsPaneModel {
 	return ResultsPaneModel{
-		Height:    0,
-		Width:     0,
-		YPosition: 0,
-		Duration:  0,
-		Results:   db.QueryResult{},
-		Err:       nil,
-		Search:    search.NewSearchModel(),
+		Duration:           0,
+		Results:            db.QueryResult{},
+		Err:                nil,
+		Search:             search.NewSearchModel(),
+		SearchableViewport: searchableviewport.NewSearchableViewportModel(),
 
-		ready:    false,
-		focused:  false,
-		viewport: NewViewportModel(0, 0),
+		focused: false,
 	}
 }
 
@@ -66,23 +51,18 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		model.Duration = msg.Duration
 		model.Err = msg.Err
 		model.Results = msg.Results
-		model.viewport.SetContent(model.ResultsView())
-		model.viewport.YPosition = 0
-
-		return model, nil
-	case WindowSizeMsg:
-		model = model.Resize(msg.Width, msg.Height, msg.YPosition)
+		model.SearchableViewport.SetContent(model.ResultsView())
 
 		return model, nil
 	case search.SearchMsg:
 		value := msg.Value
 		matches := search.Search(model.ResultsView(), value)
 		highlit := search.Highlight(model.ResultsView(), matches)
-		model.viewport.SetContent(highlit)
+		model.SearchableViewport.SetContent(highlit)
 
 		return model, nil
 	case search.SearchClearMsg:
-		model.viewport.SetContent(model.ResultsView())
+		model.SearchableViewport.SetContent(model.ResultsView())
 
 		return model, nil
 	}
@@ -92,31 +72,12 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	model.Search, cmd = model.Search.Update(msg)
+	model.SearchableViewport, cmd = model.SearchableViewport.Update(msg)
 	cmds = append(cmds, cmd)
-	model.viewport, cmd = model.viewport.Update(msg)
+	model.Search, cmd = model.Search.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return model, tea.Batch(cmds...)
-}
-
-func (model ResultsPaneModel) Resize(width int, height int, yposition int) ResultsPaneModel {
-	footerHeight := lipgloss.Height(model.footerView())
-
-	height = height - footerHeight - yposition
-	if !model.ready {
-		model.viewport = NewViewportModel(width, height)
-		model.viewport.YPosition = 0
-		model.ready = true
-	} else {
-		model.viewport.Width = width
-		model.viewport.Height = height
-	}
-
-	model.Width = model.viewport.Width
-	model.Height = model.viewport.Height
-
-	return model
 }
 
 func (model ResultsPaneModel) Focus() ResultsPaneModel {
@@ -135,12 +96,12 @@ func (model ResultsPaneModel) Blur() ResultsPaneModel {
 	return model
 }
 
-func NewViewportModel(width int, height int) viewport.Model {
-	return viewport.New(width, height)
-}
-
 func (model ResultsPaneModel) View() string {
-	return fmt.Sprintf("%s\n%s", model.viewport.View(), model.footerView())
+	return fmt.Sprintf(
+		"%s\n%s",
+		model.SearchableViewport.View(),
+		model.footerView(),
+	)
 }
 
 func (model ResultsPaneModel) ResultsView() string {
