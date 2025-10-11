@@ -10,8 +10,9 @@ import (
 )
 
 type SearchMatch struct {
-	BufferStart int
-	BufferEnd   int
+	BufferStart     int
+	BufferEnd       int
+	ScreenYPosition int
 }
 
 type SearchMsg struct {
@@ -108,15 +109,16 @@ func Search(str string, substring string) []SearchMatch {
 
 	for _, match := range re.FindAllStringIndex(str, -1) {
 		matches = append(matches, SearchMatch{
-			BufferStart: match[0],
-			BufferEnd:   match[1],
+			BufferStart:     match[0],
+			BufferEnd:       match[1],
+			ScreenYPosition: strings.Count(str[0:match[0]], "\n"),
 		})
 	}
 
 	return matches
 }
 
-func Highlight(str string, matches []SearchMatch) string {
+func Highlight(str string, matches []SearchMatch, currentMatchIndex int) string {
 	var builder strings.Builder
 
 	start := 0
@@ -124,7 +126,7 @@ func Highlight(str string, matches []SearchMatch) string {
 	for matchIndex, match := range matches {
 		builder.WriteString(str[start:match.BufferStart])
 
-		if matchIndex == 0 {
+		if currentMatchIndex == matchIndex {
 			firstCharacter := WithBlackBackground(str[match.BufferStart : match.BufferStart+1])
 			rest := WithYellowBackground(str[match.BufferStart+1 : match.BufferEnd])
 			builder.WriteString(firstCharacter + rest)

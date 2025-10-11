@@ -143,6 +143,46 @@ func TestSetContent(t *testing.T) {
 	}
 }
 
+func TestGetYOffset(t *testing.T) {
+	t.Parallel()
+
+	t.Run("match below current view", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(11, 0, 30, 10)
+		if offset != 11 {
+			t.Fatalf("expected offset to be next screen position, got %d", offset)
+		}
+	})
+
+	t.Run("match above current view", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(1, 10, 30, 10)
+		if offset != 1 {
+			t.Fatalf("expected offset to be next screen position, got %d", offset)
+		}
+	})
+
+	t.Run("match after current view but near end", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(29, 20, 30, 10)
+		if offset != 20 {
+			t.Fatalf("expected offset to be top of end, got %d", offset)
+		}
+	})
+
+	t.Run("currently visible", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(2, 0, 30, 10)
+		if offset != 0 {
+			t.Fatal("expected viewport offset not to change")
+		}
+	})
+}
+
 func TestView(t *testing.T) {
 	t.Parallel()
 

@@ -14,6 +14,8 @@ type Model struct {
 
 	content          string
 	highlightContent string
+	currentMatch     int
+	matches          []search.SearchMatch
 	ready            bool
 	viewport         viewport.Model
 }
@@ -31,6 +33,8 @@ func NewSearchableViewportModel() Model {
 
 		content:          "",
 		highlightContent: "",
+		currentMatch:     -1,
+		matches:          nil,
 		ready:            false,
 		viewport:         viewport.New(0, 0),
 	}
@@ -53,6 +57,26 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 			return model, cmd
 		}
+		//nolint:gocritic
+		switch msg.String() {
+		case "n":
+			var cmd tea.Cmd
+
+			model.currentMatch = (model.currentMatch + 1) % len(model.matches)
+			model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
+			model.viewport.SetContent(model.highlightContent)
+			match := model.matches[model.currentMatch]
+			model.viewport.YOffset = GetYOffset(
+				match.ScreenYPosition,
+				model.viewport.YOffset,
+				model.viewport.TotalLineCount(),
+				model.viewport.Height,
+			)
+
+			model.viewport, cmd = model.viewport.Update(msg)
+
+			return model, cmd
+		}
 	case WindowSizeMsg:
 		height := msg.Height - footerHeight
 		if !model.ready {
@@ -66,9 +90,10 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return model, nil
 	case search.SearchMsg:
 		value := msg.Value
-		matches := search.Search(model.content, value)
-		highlit := search.Highlight(model.content, matches)
-		model.viewport.SetContent(highlit)
+		model.matches = search.Search(model.content, value)
+		model.currentMatch = 0
+		model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
+		model.viewport.SetContent(model.highlightContent)
 
 		return model, nil
 	case search.SearchClearMsg:
@@ -89,6 +114,28 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return model, tea.Batch(cmds...)
+}
+
+func GetYOffset(
+	screenYPosition int,
+	viewportYOffset int,
+	viewportTotalLineCount int,
+	viewportHeight int,
+) int {
+	if screenYPosition > viewportYOffset+viewportHeight {
+		return screenYPosition
+	}
+
+	if screenYPosition < viewportYOffset {
+		return screenYPosition
+	}
+
+	maxYOffset := viewportTotalLineCount - viewportHeight
+	if screenYPosition > maxYOffset {
+		return maxYOffset
+	}
+
+	return viewportYOffset
 }
 
 func (model Model) View() string {

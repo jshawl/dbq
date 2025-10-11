@@ -103,7 +103,7 @@ func TestHighlight(t *testing.T) {
 		t.Parallel()
 
 		result := search.Search("abcd", "bc")
-		highlighted := search.Highlight("abcd", result)
+		highlighted := search.Highlight("abcd", result, 0)
 
 		if highlighted != "a"+search.WithBlackBackground("b")+search.WithYellowBackground("c")+"d" {
 			t.Fatalf("expected first character to be marked, got %s", highlighted)
@@ -115,7 +115,7 @@ func TestHighlight(t *testing.T) {
 
 		result := search.Search("brown clown", "ow")
 
-		highlighted := search.Highlight("brown clown", result)
+		highlighted := search.Highlight("brown clown", result, 0)
 
 		expected := "br" +
 			search.WithBlackBackground("o") +
