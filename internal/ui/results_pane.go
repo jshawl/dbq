@@ -11,16 +11,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
 	"github.com/jshawl/dbq/internal/search"
+	"github.com/jshawl/dbq/internal/searchableviewport"
 )
 
 type ResultsPaneModel struct {
-	Height    int
-	Width     int
-	YPosition int
-	Duration  time.Duration
-	Results   db.QueryResult
-	Err       error
-	Search    search.Model
+	Height             int
+	Width              int
+	YPosition          int
+	Duration           time.Duration
+	Results            db.QueryResult
+	Err                error
+	Search             search.Model
+	SearchableViewport searchableviewport.Model
 
 	ready    bool
 	viewport viewport.Model
@@ -35,13 +37,14 @@ type WindowSizeMsg struct {
 
 func NewResultsPaneModel() ResultsPaneModel {
 	return ResultsPaneModel{
-		Height:    0,
-		Width:     0,
-		YPosition: 0,
-		Duration:  0,
-		Results:   db.QueryResult{},
-		Err:       nil,
-		Search:    search.NewSearchModel(),
+		Height:             0,
+		Width:              0,
+		YPosition:          0,
+		Duration:           0,
+		Results:            db.QueryResult{},
+		Err:                nil,
+		Search:             search.NewSearchModel(),
+		SearchableViewport: searchableviewport.NewSearchableViewportModel(),
 
 		ready:    false,
 		focused:  false,
@@ -92,6 +95,8 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
+	model.SearchableViewport, cmd = model.SearchableViewport.Update(msg)
+	cmds = append(cmds, cmd)
 	model.Search, cmd = model.Search.Update(msg)
 	cmds = append(cmds, cmd)
 	model.viewport, cmd = model.viewport.Update(msg)
@@ -140,7 +145,12 @@ func NewViewportModel(width int, height int) viewport.Model {
 }
 
 func (model ResultsPaneModel) View() string {
-	return fmt.Sprintf("%s\n%s", model.viewport.View(), model.footerView())
+	return fmt.Sprintf(
+		"%s%s\n%s",
+		model.SearchableViewport.View(),
+		model.viewport.View(),
+		model.footerView(),
+	)
 }
 
 func (model ResultsPaneModel) ResultsView() string {
