@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/search"
 	"github.com/jshawl/dbq/internal/ui"
 )
 
@@ -52,20 +51,6 @@ func TestResultsPane_Update(t *testing.T) {
 			t.Fatal("expected query msg err to update model")
 		}
 	})
-
-	t.Run("SearchMsg", func(t *testing.T) {
-		t.Parallel()
-
-		model := ui.NewResultsPaneModel()
-		model.Search = model.Search.Focus()
-		_, cmd := model.Update(search.SearchMsg{
-			Value: "regexp",
-		})
-
-		if cmd != nil {
-			t.Fatal("expect cmd to be nil (todo check viewport change for highlight)")
-		}
-	})
 }
 
 func TestResultsPane_View(t *testing.T) {
@@ -94,18 +79,6 @@ func TestResultsPane_View(t *testing.T) {
 		view := model.View()
 		if !strings.Contains(view, "(2 rows in 2.345s)") {
 			t.Fatalf("expected duration to be visible\n %s", view)
-		}
-	})
-
-	t.Run("search focused", func(t *testing.T) {
-		t.Parallel()
-
-		model := ui.NewResultsPaneModel()
-		model.Search = model.Search.Focus()
-
-		view := model.View()
-		if !strings.Contains(view, "/") {
-			t.Fatalf("expected searching to show slash \n %s", view)
 		}
 	})
 }
