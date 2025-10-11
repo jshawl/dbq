@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jshawl/dbq/internal/db"
+	"github.com/jshawl/dbq/internal/searchableviewport"
 )
 
 type Model struct {
@@ -140,10 +141,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		return m, dispatch(WindowSizeMsg{
-			Width:     msg.Width,
-			Height:    msg.Height,
-			YPosition: lipgloss.Height(m.QueryPane.View()),
+		return m, dispatch(searchableviewport.WindowSizeMsg{
+			Width:  msg.Width,
+			Height: msg.Height - lipgloss.Height(m.QueryPane.View()),
 		})
 	case QueryExecMsg:
 		return m, query(msg.Value, m.DB)

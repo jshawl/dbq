@@ -1,11 +1,35 @@
 package searchableviewport
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+)
 
-type Model struct{}
+type Model struct {
+	Height int
+	Width  int
+
+	ready    bool
+	viewport viewport.Model
+}
+
+type WindowSizeMsg struct {
+	Height int
+	Width  int
+}
 
 func NewSearchableViewportModel() Model {
-	return Model{}
+	return Model{
+		Height: 0,
+		Width:  0,
+
+		ready:    false,
+		viewport: viewport.New(0, 0),
+	}
+}
+
+func (model *Model) SetContent(str string) {
+	model.viewport.SetContent(str)
 }
 
 func (model Model) Init() tea.Cmd {
@@ -13,9 +37,28 @@ func (model Model) Init() tea.Cmd {
 }
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	return model, nil
+	const footerHeight = 1
+	switch msg := msg.(type) {
+	case WindowSizeMsg:
+		height := msg.Height - footerHeight
+		if !model.ready {
+			model.viewport = viewport.New(msg.Width, height)
+			model.ready = true
+		} else {
+			model.viewport.Width = msg.Width
+			model.viewport.Height = height
+		}
+
+		return model, nil
+	}
+
+	var cmd tea.Cmd
+
+	model.viewport, cmd = model.viewport.Update(msg)
+
+	return model, cmd
 }
 
 func (model Model) View() string {
-	return ""
+	return model.viewport.View()
 }
