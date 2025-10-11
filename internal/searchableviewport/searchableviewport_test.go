@@ -137,6 +137,7 @@ func TestSetContent(t *testing.T) {
 	model := initializeViewport(t, searchableviewport.NewSearchableViewportModel())
 	model.Search.Value = "prev search"
 	model.SetContent("success!")
+
 	if model.Search.Value == "prev search" {
 		t.Fatal("expected SetContent to reset search model")
 	}
