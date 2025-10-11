@@ -1,6 +1,8 @@
 package searchableviewport
 
 import (
+	"log"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/search"
@@ -24,6 +26,13 @@ type WindowSizeMsg struct {
 	Height int
 	Width  int
 }
+
+type SearchDirection int
+
+const (
+	SearchDirectionDown SearchDirection = iota
+	SearchDirectionUp
+)
 
 func NewSearchableViewportModel() Model {
 	return Model{
@@ -71,6 +80,28 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				model.viewport.YOffset,
 				model.viewport.TotalLineCount(),
 				model.viewport.Height,
+				SearchDirectionDown,
+			)
+
+			model.viewport, cmd = model.viewport.Update(msg)
+
+			return model, cmd
+		case "N":
+			var cmd tea.Cmd
+
+			model.currentMatch = (model.currentMatch - 1) % len(model.matches)
+			if model.currentMatch < 0 {
+				model.currentMatch = len(model.matches) - 1
+			}
+			model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
+			model.viewport.SetContent(model.highlightContent)
+			match := model.matches[model.currentMatch]
+			model.viewport.YOffset = GetYOffset(
+				match.ScreenYPosition,
+				model.viewport.YOffset,
+				model.viewport.TotalLineCount(),
+				model.viewport.Height,
+				SearchDirectionUp,
 			)
 
 			model.viewport, cmd = model.viewport.Update(msg)
@@ -121,20 +152,43 @@ func GetYOffset(
 	viewportYOffset int,
 	viewportTotalLineCount int,
 	viewportHeight int,
+	searchDirection SearchDirection,
 ) int {
+	log.Printf("before change syp: %d, vo: %d, vtlc: %d vh: %d", screenYPosition, viewportYOffset, viewportTotalLineCount, viewportHeight)
+	// below current viewport
 	if screenYPosition > viewportYOffset+viewportHeight {
-		return screenYPosition
+		log.Printf("syp is below: %d", screenYPosition)
+		if searchDirection == SearchDirectionDown {
+			return screenYPosition
+		} else {
+			return viewportTotalLineCount - viewportHeight
+		}
 	}
 
+	// above current viewport
 	if screenYPosition < viewportYOffset {
-		return screenYPosition
+		log.Printf("syp is above: %d", screenYPosition)
+		if searchDirection == SearchDirectionDown {
+			return screenYPosition
+		} else {
+			maybeYOffset := screenYPosition - viewportHeight + 1
+			log.Printf("maybeYOffset: %d", maybeYOffset)
+			if maybeYOffset < 0 {
+				return 0
+			}
+			return maybeYOffset
+		}
 	}
 
+	// top offset is too far
 	maxYOffset := viewportTotalLineCount - viewportHeight
 	if screenYPosition > maxYOffset {
+		log.Printf("too far: %d", maxYOffset)
 		return maxYOffset
 	}
 
+	log.Printf("already visible: %d", viewportYOffset)
+	// already visible
 	return viewportYOffset
 }
 
