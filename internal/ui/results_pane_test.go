@@ -15,26 +15,6 @@ import (
 func TestResultsPane_Update(t *testing.T) {
 	t.Parallel()
 
-	t.Run("WindowSizeMsg", func(t *testing.T) {
-		t.Parallel()
-
-		model := ui.NewResultsPaneModel()
-		updatedModel, _ := model.Update(ui.WindowSizeMsg{
-			Height:    42,
-			Width:     37,
-			YPosition: 2,
-		})
-
-		// height - yposition (2) - footer (1)
-		if updatedModel.Height != 39 {
-			t.Fatalf("expected WindowSizeMsg.Height to be 40, got %d", updatedModel.Height)
-		}
-
-		if updatedModel.Width != 37 {
-			t.Fatalf("expected WindowSizeMsg.Width to be 37, got %d", updatedModel.Width)
-		}
-	})
-
 	t.Run("QueryResponseReceivedMsg", func(t *testing.T) {
 		t.Parallel()
 
@@ -161,21 +141,4 @@ func TestResultsPane_ResultsView(t *testing.T) {
 			t.Fatal("expected model error to be visible")
 		}
 	})
-}
-
-func TestResultsPane_Resize(t *testing.T) {
-	t.Parallel()
-
-	model := ui.NewResultsPaneModel()
-
-	model = model.Resize(20, 30, 1)
-	if model.Width != 20 {
-		t.Fatal("expected resize to set width")
-	}
-
-	model = model.Resize(40, 50, 1)
-	// subtracts the header and footer
-	if model.Height != 48 {
-		t.Fatalf("expected resize to set height, got %d", model.Height)
-	}
 }

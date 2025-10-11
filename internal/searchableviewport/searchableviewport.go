@@ -32,10 +32,6 @@ func (model *Model) SetContent(str string) {
 	model.viewport.SetContent(str)
 }
 
-func (model Model) Init() tea.Cmd {
-	return nil
-}
-
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	const footerHeight = 1
 	switch msg := msg.(type) {
