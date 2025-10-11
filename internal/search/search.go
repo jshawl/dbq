@@ -80,6 +80,7 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	model.textInput, cmd = model.textInput.Update(msg)
+	model.Value = model.textInput.Value()
 
 	return model, cmd
 }
