@@ -1,8 +1,6 @@
 package searchableviewport
 
 import (
-	"log"
-
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/search"
@@ -55,6 +53,27 @@ func (model *Model) SetContent(str string) {
 	model.viewport.SetContent(str)
 }
 
+func cycle(current int, maximum int, direction SearchDirection) int {
+	if direction == SearchDirectionDown {
+		return (current + 1) % maximum
+	}
+
+	nextCurrent := (current - 1) % maximum
+	if nextCurrent < 0 {
+		nextCurrent = maximum - 1
+	}
+
+	return nextCurrent
+}
+
+func getDirection(char string) SearchDirection {
+	if char == "N" {
+		return SearchDirectionUp
+	}
+
+	return SearchDirectionDown
+}
+
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	const footerHeight = 1
 
@@ -66,42 +85,23 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 			return model, cmd
 		}
-		//nolint:gocritic
-		switch msg.String() {
-		case "n":
+
+		char := msg.String()
+
+		if char == "n" || char == "N" {
 			var cmd tea.Cmd
 
-			model.currentMatch = (model.currentMatch + 1) % len(model.matches)
+			direction := getDirection(char)
+
+			model.currentMatch = cycle(model.currentMatch, len(model.matches), direction)
 			model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
 			model.viewport.SetContent(model.highlightContent)
-			match := model.matches[model.currentMatch]
 			model.viewport.YOffset = GetYOffset(
-				match.ScreenYPosition,
+				model.matches[model.currentMatch].ScreenYPosition,
 				model.viewport.YOffset,
 				model.viewport.TotalLineCount(),
 				model.viewport.Height,
-				SearchDirectionDown,
-			)
-
-			model.viewport, cmd = model.viewport.Update(msg)
-
-			return model, cmd
-		case "N":
-			var cmd tea.Cmd
-
-			model.currentMatch = (model.currentMatch - 1) % len(model.matches)
-			if model.currentMatch < 0 {
-				model.currentMatch = len(model.matches) - 1
-			}
-			model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
-			model.viewport.SetContent(model.highlightContent)
-			match := model.matches[model.currentMatch]
-			model.viewport.YOffset = GetYOffset(
-				match.ScreenYPosition,
-				model.viewport.YOffset,
-				model.viewport.TotalLineCount(),
-				model.viewport.Height,
-				SearchDirectionUp,
+				direction,
 			)
 
 			model.viewport, cmd = model.viewport.Update(msg)
@@ -154,10 +154,8 @@ func GetYOffset(
 	viewportHeight int,
 	searchDirection SearchDirection,
 ) int {
-	log.Printf("before change syp: %d, vo: %d, vtlc: %d vh: %d", screenYPosition, viewportYOffset, viewportTotalLineCount, viewportHeight)
 	// below current viewport
 	if screenYPosition > viewportYOffset+viewportHeight {
-		log.Printf("syp is below: %d", screenYPosition)
 		if searchDirection == SearchDirectionDown {
 			return screenYPosition
 		} else {
@@ -167,15 +165,15 @@ func GetYOffset(
 
 	// above current viewport
 	if screenYPosition < viewportYOffset {
-		log.Printf("syp is above: %d", screenYPosition)
 		if searchDirection == SearchDirectionDown {
 			return screenYPosition
 		} else {
 			maybeYOffset := screenYPosition - viewportHeight + 1
-			log.Printf("maybeYOffset: %d", maybeYOffset)
+
 			if maybeYOffset < 0 {
 				return 0
 			}
+
 			return maybeYOffset
 		}
 	}
@@ -183,11 +181,9 @@ func GetYOffset(
 	// top offset is too far
 	maxYOffset := viewportTotalLineCount - viewportHeight
 	if screenYPosition > maxYOffset {
-		log.Printf("too far: %d", maxYOffset)
 		return maxYOffset
 	}
 
-	log.Printf("already visible: %d", viewportYOffset)
 	// already visible
 	return viewportYOffset
 }

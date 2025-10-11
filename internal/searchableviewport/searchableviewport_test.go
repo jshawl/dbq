@@ -174,7 +174,9 @@ func TestGetYOffset(t *testing.T) {
 	t.Run("down - match below current view", func(t *testing.T) {
 		t.Parallel()
 
-		offset := searchableviewport.GetYOffset(11, 0, 30, 10, searchableviewport.SearchDirectionDown)
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(11, 0, 30, 10, direction)
+
 		if offset != 11 {
 			t.Fatalf("expected offset to be next screen position, got %d", offset)
 		}
@@ -183,7 +185,9 @@ func TestGetYOffset(t *testing.T) {
 	t.Run("down - match above current view", func(t *testing.T) {
 		t.Parallel()
 
-		offset := searchableviewport.GetYOffset(1, 10, 30, 10, searchableviewport.SearchDirectionDown)
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(1, 10, 30, 10, direction)
+
 		if offset != 1 {
 			t.Fatalf("expected offset to be next screen position, got %d", offset)
 		}
@@ -192,7 +196,9 @@ func TestGetYOffset(t *testing.T) {
 	t.Run("down - match after current view but near end", func(t *testing.T) {
 		t.Parallel()
 
-		offset := searchableviewport.GetYOffset(29, 20, 30, 10, searchableviewport.SearchDirectionDown)
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(29, 20, 30, 10, direction)
+
 		if offset != 20 {
 			t.Fatalf("expected offset to be top of end, got %d", offset)
 		}
@@ -228,7 +234,9 @@ func TestGetYOffset(t *testing.T) {
 	t.Run("up - match after current view but near end", func(t *testing.T) {
 		t.Parallel()
 
-		offset := searchableviewport.GetYOffset(29, 20, 30, 10, searchableviewport.SearchDirectionUp)
+		direction := searchableviewport.SearchDirectionUp
+		offset := searchableviewport.GetYOffset(29, 20, 30, 10, direction)
+
 		if offset != 20 {
 			t.Fatalf("expected offset to be top of end, got %d", offset)
 		}
@@ -237,7 +245,9 @@ func TestGetYOffset(t *testing.T) {
 	t.Run("currently visible", func(t *testing.T) {
 		t.Parallel()
 
-		offset := searchableviewport.GetYOffset(2, 0, 30, 10, searchableviewport.SearchDirectionDown)
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(2, 0, 30, 10, direction)
+
 		if offset != 0 {
 			t.Fatal("expected viewport offset not to change")
 		}
