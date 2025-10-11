@@ -38,6 +38,7 @@ func NewSearchableViewportModel() Model {
 
 func (model *Model) SetContent(str string) {
 	model.content = str
+	model.Search = search.NewSearchModel()
 	model.viewport.SetContent(str)
 }
 

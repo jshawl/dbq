@@ -131,6 +131,17 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
+func TestSetContent(t *testing.T) {
+	t.Parallel()
+
+	model := initializeViewport(t, searchableviewport.NewSearchableViewportModel())
+	model.Search.Value = "prev search"
+	model.SetContent("success!")
+	if model.Search.Value == "prev search" {
+		t.Fatal("expected SetContent to reset search model")
+	}
+}
+
 func TestView(t *testing.T) {
 	t.Parallel()
 
