@@ -8,7 +8,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jshawl/dbq/internal/db"
-	"github.com/jshawl/dbq/internal/search"
 	"github.com/jshawl/dbq/internal/searchableviewport"
 )
 
@@ -16,7 +15,6 @@ type ResultsPaneModel struct {
 	Duration           time.Duration
 	Results            db.QueryResult
 	Err                error
-	Search             search.Model
 	SearchableViewport searchableviewport.Model
 
 	focused bool
@@ -27,7 +25,6 @@ func NewResultsPaneModel() ResultsPaneModel {
 		Duration:           0,
 		Results:            db.QueryResult{},
 		Err:                nil,
-		Search:             search.NewSearchModel(),
 		SearchableViewport: searchableviewport.NewSearchableViewportModel(),
 
 		focused: false,
@@ -40,28 +37,10 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 		if !model.focused {
 			return model, nil
 		}
-
-		if model.Search.Focused() {
-			updatedSearchModel, cmd := model.Search.Update(msg)
-			model.Search = updatedSearchModel
-
-			return model, cmd
-		}
 	case QueryResponseReceivedMsg:
 		model.Duration = msg.Duration
 		model.Err = msg.Err
 		model.Results = msg.Results
-		model.SearchableViewport.SetContent(model.ResultsView())
-
-		return model, nil
-	case search.SearchMsg:
-		value := msg.Value
-		matches := search.Search(model.ResultsView(), value)
-		highlit := search.Highlight(model.ResultsView(), matches)
-		model.SearchableViewport.SetContent(highlit)
-
-		return model, nil
-	case search.SearchClearMsg:
 		model.SearchableViewport.SetContent(model.ResultsView())
 
 		return model, nil
@@ -73,8 +52,6 @@ func (model ResultsPaneModel) Update(msg tea.Msg) (ResultsPaneModel, tea.Cmd) {
 	)
 
 	model.SearchableViewport, cmd = model.SearchableViewport.Update(msg)
-	cmds = append(cmds, cmd)
-	model.Search, cmd = model.Search.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return model, tea.Batch(cmds...)
@@ -130,8 +107,8 @@ func (model ResultsPaneModel) ResultsView() string {
 }
 
 func (model ResultsPaneModel) footerView() string {
-	if model.Search.Focused() || model.Search.Value != "" {
-		return model.Search.View()
+	if model.SearchableViewport.FooterView() != "" && model.focused {
+		return model.SearchableViewport.FooterView()
 	}
 
 	if model.Duration.Seconds() == 0 {

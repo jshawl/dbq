@@ -50,6 +50,8 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "/":
+			model.textInput.SetValue("")
+
 			return model.Focus(), nil
 		case "esc":
 			model.focused = false
@@ -69,6 +71,10 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return SearchMsg{
 					Value: value,
 				}
+			}
+		default:
+			if !model.focused {
+				return model, nil
 			}
 		}
 	}
