@@ -129,6 +129,31 @@ func TestUpdate(t *testing.T) {
 			t.Fatal("expected highlighted view to be unhighlighted")
 		}
 	})
+
+	t.Run("n navigates search results", func(t *testing.T) {
+		t.Parallel()
+
+		lipgloss.SetColorProfile(termenv.TrueColor)
+
+		model := initializeViewport(t, searchableviewport.NewSearchableViewportModel())
+		model.SetContent("abcd abef")
+
+		msg := search.SearchMsg{
+			Value: "ab",
+		}
+
+		updatedModel, _ := model.Update(msg)
+
+		navigatedModel, _ := updatedModel.Update(tea.KeyMsg{
+			Alt:   false,
+			Paste: false,
+			Type:  tea.KeyRunes,
+			Runes: []rune{'n'},
+		})
+		if updatedModel.View() == navigatedModel.View() {
+			t.Fatal("expected highlighted view to update mark")
+		}
+	})
 }
 
 func TestSetContent(t *testing.T) {
@@ -141,6 +166,92 @@ func TestSetContent(t *testing.T) {
 	if model.Search.Value == "prev search" {
 		t.Fatal("expected SetContent to reset search model")
 	}
+}
+
+func TestGetYOffset(t *testing.T) {
+	t.Parallel()
+
+	t.Run("down - match below current view", func(t *testing.T) {
+		t.Parallel()
+
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(11, 0, 30, 10, direction)
+
+		if offset != 11 {
+			t.Fatalf("expected offset to be next screen position, got %d", offset)
+		}
+	})
+
+	t.Run("down - match above current view", func(t *testing.T) {
+		t.Parallel()
+
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(1, 10, 30, 10, direction)
+
+		if offset != 1 {
+			t.Fatalf("expected offset to be next screen position, got %d", offset)
+		}
+	})
+
+	t.Run("down - match after current view but near end", func(t *testing.T) {
+		t.Parallel()
+
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(29, 20, 30, 10, direction)
+
+		if offset != 20 {
+			t.Fatalf("expected offset to be top of end, got %d", offset)
+		}
+	})
+
+	t.Run("up - match below current view", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(11, 0, 30, 10, searchableviewport.SearchDirectionUp)
+		if offset != 20 {
+			t.Fatalf("expected offset to page up from end, got %d", offset)
+		}
+	})
+
+	t.Run("up - match above current view", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(1, 10, 30, 10, searchableviewport.SearchDirectionUp)
+		if offset != 0 {
+			t.Fatalf("expected offset to be 0, got %d", offset)
+		}
+	})
+
+	t.Run("up - match above current view close to top", func(t *testing.T) {
+		t.Parallel()
+
+		offset := searchableviewport.GetYOffset(9, 10, 30, 10, searchableviewport.SearchDirectionUp)
+		if offset != 0 {
+			t.Fatalf("expected offset to be 0, got %d", offset)
+		}
+	})
+
+	t.Run("up - match after current view but near end", func(t *testing.T) {
+		t.Parallel()
+
+		direction := searchableviewport.SearchDirectionUp
+		offset := searchableviewport.GetYOffset(29, 20, 30, 10, direction)
+
+		if offset != 20 {
+			t.Fatalf("expected offset to be top of end, got %d", offset)
+		}
+	})
+
+	t.Run("currently visible", func(t *testing.T) {
+		t.Parallel()
+
+		direction := searchableviewport.SearchDirectionDown
+		offset := searchableviewport.GetYOffset(2, 0, 30, 10, direction)
+
+		if offset != 0 {
+			t.Fatal("expected viewport offset not to change")
+		}
+	})
 }
 
 func TestView(t *testing.T) {

@@ -14,6 +14,8 @@ type Model struct {
 
 	content          string
 	highlightContent string
+	currentMatch     int
+	matches          []search.SearchMatch
 	ready            bool
 	viewport         viewport.Model
 }
@@ -23,6 +25,13 @@ type WindowSizeMsg struct {
 	Width  int
 }
 
+type SearchDirection int
+
+const (
+	SearchDirectionDown SearchDirection = iota
+	SearchDirectionUp
+)
+
 func NewSearchableViewportModel() Model {
 	return Model{
 		Height: 0,
@@ -31,6 +40,8 @@ func NewSearchableViewportModel() Model {
 
 		content:          "",
 		highlightContent: "",
+		currentMatch:     -1,
+		matches:          nil,
 		ready:            false,
 		viewport:         viewport.New(0, 0),
 	}
@@ -42,6 +53,27 @@ func (model *Model) SetContent(str string) {
 	model.viewport.SetContent(str)
 }
 
+func cycle(current int, maximum int, direction SearchDirection) int {
+	if direction == SearchDirectionDown {
+		return (current + 1) % maximum
+	}
+
+	nextCurrent := (current - 1) % maximum
+	if nextCurrent < 0 {
+		nextCurrent = maximum - 1
+	}
+
+	return nextCurrent
+}
+
+func getDirection(char string) SearchDirection {
+	if char == "N" {
+		return SearchDirectionUp
+	}
+
+	return SearchDirectionDown
+}
+
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	const footerHeight = 1
 
@@ -50,6 +82,29 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if model.Search.Focused() {
 			updatedSearchModel, cmd := model.Search.Update(msg)
 			model.Search = updatedSearchModel
+
+			return model, cmd
+		}
+
+		char := msg.String()
+
+		if char == "n" || char == "N" {
+			var cmd tea.Cmd
+
+			direction := getDirection(char)
+
+			model.currentMatch = cycle(model.currentMatch, len(model.matches), direction)
+			model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
+			model.viewport.SetContent(model.highlightContent)
+			model.viewport.YOffset = GetYOffset(
+				model.matches[model.currentMatch].ScreenYPosition,
+				model.viewport.YOffset,
+				model.viewport.TotalLineCount(),
+				model.viewport.Height,
+				direction,
+			)
+
+			model.viewport, cmd = model.viewport.Update(msg)
 
 			return model, cmd
 		}
@@ -66,9 +121,10 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return model, nil
 	case search.SearchMsg:
 		value := msg.Value
-		matches := search.Search(model.content, value)
-		highlit := search.Highlight(model.content, matches)
-		model.viewport.SetContent(highlit)
+		model.matches = search.Search(model.content, value)
+		model.currentMatch = 0
+		model.highlightContent = search.Highlight(model.content, model.matches, model.currentMatch)
+		model.viewport.SetContent(model.highlightContent)
 
 		return model, nil
 	case search.SearchClearMsg:
@@ -89,6 +145,47 @@ func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	return model, tea.Batch(cmds...)
+}
+
+func GetYOffset(
+	screenYPosition int,
+	viewportYOffset int,
+	viewportTotalLineCount int,
+	viewportHeight int,
+	searchDirection SearchDirection,
+) int {
+	// below current viewport
+	if screenYPosition > viewportYOffset+viewportHeight {
+		if searchDirection == SearchDirectionDown {
+			return screenYPosition
+		} else {
+			return viewportTotalLineCount - viewportHeight
+		}
+	}
+
+	// above current viewport
+	if screenYPosition < viewportYOffset {
+		if searchDirection == SearchDirectionDown {
+			return screenYPosition
+		} else {
+			maybeYOffset := screenYPosition - viewportHeight + 1
+
+			if maybeYOffset < 0 {
+				return 0
+			}
+
+			return maybeYOffset
+		}
+	}
+
+	// top offset is too far
+	maxYOffset := viewportTotalLineCount - viewportHeight
+	if screenYPosition > maxYOffset {
+		return maxYOffset
+	}
+
+	// already visible
+	return viewportYOffset
 }
 
 func (model Model) View() string {
