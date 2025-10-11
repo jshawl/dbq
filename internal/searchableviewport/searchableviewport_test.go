@@ -7,13 +7,15 @@ import (
 	"github.com/jshawl/dbq/internal/searchableviewport"
 )
 
-func initializeViewport(model searchableviewport.Model, t *testing.T) searchableviewport.Model {
+func initializeViewport(t *testing.T, model searchableviewport.Model) searchableviewport.Model {
 	t.Helper()
+
 	msg := searchableviewport.WindowSizeMsg{
 		Height: 10,
 		Width:  10,
 	}
 	updatedModel, _ := model.Update(msg)
+
 	return updatedModel
 }
 
@@ -39,9 +41,11 @@ func TestUpdate(t *testing.T) {
 			Width:  10,
 		}
 		updatedModel, cmd := model.Update(msg)
+
 		if cmd != nil {
 			t.Fatal("expected no cmd from window resize")
 		}
+
 		_, cmd = updatedModel.Update(msg)
 		if cmd != nil {
 			t.Fatal("expected no cmd from second window resize")
@@ -52,8 +56,9 @@ func TestUpdate(t *testing.T) {
 func TestView(t *testing.T) {
 	t.Parallel()
 
-	model := initializeViewport(searchableviewport.NewSearchableViewportModel(), t)
+	model := initializeViewport(t, searchableviewport.NewSearchableViewportModel())
 	model.SetContent("success!")
+
 	if !strings.Contains(model.View(), "success!") {
 		t.Fatal("expected view to have updated content")
 	}

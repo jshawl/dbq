@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+//nolint:recvcheck // to match bubbletea interface
 type Model struct {
 	Height int
 	Width  int
@@ -34,6 +35,7 @@ func (model *Model) SetContent(str string) {
 
 func (model Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	const footerHeight = 1
+	//nolint:gocritic
 	switch msg := msg.(type) {
 	case WindowSizeMsg:
 		height := msg.Height - footerHeight
