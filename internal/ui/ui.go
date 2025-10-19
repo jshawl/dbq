@@ -38,6 +38,10 @@ type QueryResponseReceivedMsg struct {
 	QueryMsg
 }
 
+type ConnectionErrorMsg struct {
+	err error
+}
+
 func Run() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -75,7 +79,14 @@ func Run() {
 
 	log.Println("ui.Run()")
 
-	_, err = program.Run()
+	teaModel, err := program.Run()
+	model, _ := teaModel.(Model)
+
+	if model.Err != nil {
+		//nolint:forbidigo
+		fmt.Println(model.Err)
+	}
+
 	if err != nil {
 		defer func() {
 			log.Fatal(err)
@@ -98,7 +109,12 @@ func NewUIModel(databaseUrl string, configPath string) Model {
 func (m Model) Init() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		pgdb, _ := db.NewPostgresDB(ctx, m.databaseUrl)
+
+		pgdb, err := db.NewPostgresDB(ctx, m.databaseUrl)
+		if err != nil {
+			return ConnectionErrorMsg{err: err}
+		}
+
 		db := db.NewDB(pgdb)
 
 		return DBMsg{
@@ -140,6 +156,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Quit
 		}
+	case ConnectionErrorMsg:
+		m.Err = msg.err
+
+		return m, tea.Quit
 	case tea.WindowSizeMsg:
 		return m, dispatch(searchableviewport.WindowSizeMsg{
 			Width:  msg.Width,
